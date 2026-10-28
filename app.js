@@ -1,0 +1,52 @@
+const $=s=>document.querySelector(s),main=$('#main');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CATS={roman:['Pour mes filles','Un roman-témoignage, écrit pour elles.'],libre:['Textes libres','Des textes posés ici, sans lien entre eux.'],grivois:['Privé','Un coin réservé. Le mot de passe est nécessaire.']};
+let texts=[],plain={},open=false;
+const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
+const body=t=>esc(t).split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
+const of=c=>texts.filter(t=>t.category===c).sort((a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1));
+const list=items=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}</b><span>${fmt(t.date)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
+
+function home(){main.innerHTML=Object.entries(CATS).map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')}
+
+function cat(c){
+ const head=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
+ if(c!=='grivois'){main.innerHTML=head+list(items);return}
+ const open=items.filter(t=>plain[t.id]),hidden=items.length-open.length;
+ main.innerHTML=head+(open.length||!items.length?list(open):'')+(hidden?`<form id="f" class="lock"><input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe"><button>Entrer</button></form><p class="msg" id="m"></p>`:'');
+ if(hidden)$('#f').onsubmit=async e=>{e.preventDefault();const p=$('#pw').value;let n=0;
+  for(const t of items.filter(t=>!plain[t.id])){try{plain[t.id]=await unlock(t.enc,p);n++}catch{}}
+  n?cat(c):$('#m').textContent='Mot de passe incorrect.'};
+}
+
+function show(id){
+ const t=texts.find(x=>x.id===id);if(!t)return home();
+ const v=t.enc?plain[id]:t;if(!v){location.hash='#/'+t.category;return}
+ main.innerHTML=`<a class="back" href="#/${t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)}</p><div class="text">${body(v.body)}</div>`;
+}
+
+function route(){
+ if(!open)return;
+ const h=location.hash.replace(/^#\/?/,'').split('/');
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#/'+h[0]));
+ scrollTo(0,0);
+ if(h[0]==='t')return show(h[1]);
+ CATS[h[0]]?cat(h[0]):home();
+}
+addEventListener('hashchange',route);
+function gate(){
+ main.innerHTML='<form id="g" class="gate"><h1>Accès privé</h1><p class="lead">Ce site est réservé.</p><input type="password" id="gp" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe" autofocus><label class="show"><input type="checkbox" id="sp"> Afficher le mot de passe</label><p><button>Entrer</button></p><p class="msg" id="gm" role="status"></p></form>';
+ $('#sp').onchange=e=>{$('#gp').type=e.target.checked?'text':'password'};
+ $('#g').onsubmit=async e=>{e.preventDefault();$('#gm').textContent='Vérification…';
+  try{const r=await fetch('content/texts.json?'+Date.now()),o=r.ok?await r.json():[];
+   texts=Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value);
+   open=true;$('nav').hidden=false;route()}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
+gate();
+
+// Dissuasion contre la copie (ne remplace pas le chiffrement)
+const inField=e=>/^(INPUT|TEXTAREA)$/.test((e.target.tagName||''));
+['contextmenu','copy','cut','dragstart','selectstart'].forEach(v=>addEventListener(v,e=>{if(!inField(e))e.preventDefault()}));
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&/^[cpsua]$/i.test(e.key)&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))e.preventDefault()});
+const veil=on=>document.body.classList.toggle('veil',on);
+addEventListener('blur',()=>veil(true));addEventListener('focus',()=>veil(false));
+document.addEventListener('visibilitychange',()=>veil(document.hidden));
