@@ -5,9 +5,16 @@ let texts=[],plain={},open=false;
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
 const body=t=>esc(t).split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
 const of=c=>texts.filter(t=>t.category===c).sort((a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1));
-const list=items=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}</b><span>${fmt(t.date)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
+const wc=s=>(String(s).match(/\S+/g)||[]).length;
+const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
+const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
 
-function home(){main.innerHTML=Object.entries(CATS).map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')}
+function home(){
+ main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
+ $('#q').oninput=e=>{const q=nrm(e.target.value.trim());$('#cats').hidden=!!q;
+  const r=q?texts.filter(t=>{const v=plain[t.id]||t;return v.title&&nrm(v.title+' '+v.body).includes(q)}):[];
+  $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
 
 function cat(c){
  const head=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
@@ -22,7 +29,7 @@ function cat(c){
 function show(id){
  const t=texts.find(x=>x.id===id);if(!t)return home();
  const v=t.enc?plain[id]:t;if(!v){location.hash='#/'+t.category;return}
- main.innerHTML=`<a class="back" href="#/${t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)}</p><div class="text">${body(v.body)}</div>`;
+ main.innerHTML=`<a class="back" href="#/${t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(v.body)}</p><div class="text">${body(v.body)}</div>`;
 }
 
 function route(){

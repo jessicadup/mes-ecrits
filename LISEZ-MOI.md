@@ -16,3 +16,8 @@
 
 # Au quotidien
 `admin.html` > mot de passe > catégorie, texte (tapé ou importé en .docx / PDF) > « Publier ». Visible 1 à 2 minutes plus tard.
+
+# Nouveautés
+- Le site s'appelle « Mots après maux » (à changer dans `index.html`, deux endroits : le titre et le nom en haut).
+- Page admin : caractères, mots et temps de lecture de chaque texte, camembert de remplissage de la mémoire (limite de 1 Mo pour ce fonctionnement) et boutons de sauvegarde par dossier.
+- Site : barre de recherche sur l'accueil (les textes Privé n'y sont cherchables qu'une fois déverrouillés), temps de lecture ⏳ et haricot magique qui pousse sur le côté quand on fait défiler la page.

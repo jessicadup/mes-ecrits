@@ -32,10 +32,10 @@ $('#sp2').onchange=e=>{$('#pw').type=e.target.checked?'text':'password'};
 const api=c=>`https://api.github.com/repos/${c.o}/${c.r}/contents/content/texts.json`;
 const hd=c=>({Authorization:'Bearer '+c.t,Accept:'application/vnd.github+json'});
 async function load(){const c=cfg(),r=await fetch(api(c)+'?ref='+c.b+'&_='+Date.now(),{headers:hd(c)});
- if(r.status===404)return{list:[],sha:null};
+ if(r.status===404)return{list:[],sha:null,size:0};
  if(!r.ok)throw new Error('GitHub a répondu '+r.status+' : vérifiez le jeton, l’identifiant et le nom du dépôt.');
  const j=await r.json(),o=JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,''))));
- return{list:Array.isArray(o)?o:await unlock(o.enc,PW),sha:j.sha}}
+ return{list:Array.isArray(o)?o:await unlock(o.enc,PW),sha:j.sha,size:j.size}}
 async function save(list,sha,message){const c=cfg(),b={message,branch:c.b,content:toB64(new TextEncoder().encode(JSON.stringify({v:2,enc:await lock(list,PW)})))};
  if(sha)b.sha=sha;const r=await fetch(api(c),{method:'PUT',headers:hd(c),body:JSON.stringify(b)});
  if(!r.ok)throw new Error('L’enregistrement a échoué ('+r.status+'). Le jeton autorise-t-il l’écriture sur ce dépôt ?')}
@@ -43,7 +43,7 @@ async function save(list,sha,message){const c=cfg(),b={message,branch:c.b,conten
 // Formulaire
 $('#date').value=today();
 $('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois'};
-function reset(){editId=null;['title','body','pw','file'].forEach(k=>$('#'+k).value='');$('#date').value=today();$('#pub').textContent='Publier'}
+function reset(){editId=null;['title','body','pw','file'].forEach(k=>$('#'+k).value='');$('#date').value=today();$('#pub').textContent='Publier';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
 
 $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let t='';
@@ -56,12 +56,12 @@ $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f
   else t=await f.text();
  }catch(e){return msg('Lecture impossible : '+e.message)}
  $('#body').value=t.trim();if(!$('#title').value)$('#title').value=f.name.replace(/\.[^.]+$/,'');
- msg('Fichier importé. Relisez le texte avant de publier.')};
+ upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
 $('#pub').onclick=async()=>{
  const cat=$('#cat').value,title=$('#title').value.trim(),text=$('#body').value.trim(),date=$('#date').value;
  if(!title||!text)return msg('Il manque le titre ou le texte.');
- const e={id:editId||Date.now().toString(36),category:cat,date};
+ const e={id:editId||Date.now().toString(36),category:cat,date,n:cnt(text)};
  try{
   if(cat==='grivois'){const p=$('#pw').value;if(p.length<8)return msg('Second mot de passe : 8 caractères minimum.');e.enc=await lock({title,body:text},p)}
   else{e.title=title;e.body=text}
@@ -73,8 +73,8 @@ $('#pub').onclick=async()=>{
  }catch(err){msg(err.message)}};
 
 async function refresh(strict){
- try{const{list}=await load();cur=list;
-  $('#list').innerHTML=list.length?[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>`<div class="item row"><div><b>${t.enc?'🔒 Texte privé':esc(t.title)}</b><span>${CATN[t.category]} · ${t.date||''}</span></div><div style="flex:none"><button class="ghost" data-e="${t.id}">Modifier</button> <button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
+ try{const{list,size}=await load();cur=list;pie(list,size);
+  $('#list').innerHTML=list.length?[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>`<div class="item row"><div><b>${t.enc?'🔒 Texte privé':esc(t.title)}</b><span>${CATN[t.category]} · ${t.date||''}${meta(t)}</span></div><div style="flex:none"><button class="ghost" data-e="${t.id}">Modifier</button> <button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
  }catch(e){if(strict)throw e;msg(e.message)}}
 
 $('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
@@ -83,4 +83,40 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.e){const t=cur.find(x=>x.id===b.dataset.e);let v=t,p='';
   if(t.enc){p=prompt('Second mot de passe de ce texte :');if(!p)return;try{v=await unlock(t.enc,p)}catch{return msg('Mot de passe incorrect.')}}
   editId=t.id;$('#cat').value=t.category;$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=v.title;$('#body').value=v.body;$('#pw').value=p;$('#pub').textContent='Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  $('#title').value=v.title;$('#body').value=v.body;upd();$('#pw').value=p;$('#pub').textContent='Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+
+// Compteurs, camembert de mémoire, sauvegarde
+const fr=n=>n.toLocaleString('fr-FR');
+const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
+const meta=t=>{const n=t.n||(t.body!=null?cnt(t.body):null);return n?` · ${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min`:''};
+function upd(){const n=cnt($('#body').value);$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
+$('#body').oninput=upd;
+
+const LIMIT=1000000,COL={roman:'var(--accent)',libre:'#8fae9b',grivois:'#c9a9a6'};
+function pie(list,size){
+ const by={roman:0,libre:0,grivois:0};let P=0;
+ list.forEach(t=>{const b=JSON.stringify(t).length;by[t.category]=(by[t.category]||0)+b;P+=b});
+ let acc=0;const st=[],sh={};
+ for(const k in by){sh[k]=P?size*by[k]/P:0;st.push(`${COL[k]} ${acc/LIMIT*100}% ${(acc+sh[k])/LIMIT*100}%`);acc+=sh[k]}
+ st.push(`var(--line) ${Math.min(acc/LIMIT*100,100)}% 100%`);
+ $('#pie').style.background=`conic-gradient(${st.join(',')})`;
+ const ko=n=>fr(Math.round(n/1024))+' Ko';
+ $('#leg').innerHTML=`<b>${ko(size)} utilisés sur ${ko(LIMIT)} (${Math.round(size/LIMIT*100)} %)</b><br>`
+  +Object.keys(by).map(k=>`<i style="background:${COL[k]}"></i>${CATN[k]} : ${ko(sh[k])}`).join('<br>')
+  +`<br><i style="background:var(--line)"></i>Espace libre : ${ko(Math.max(LIMIT-size,0))}`
+  +(size>LIMIT*.7?'<br>⚠ Bientôt plein : il faudra passer à un fichier par texte.':'')}
+
+$('#bk').onclick=ev=>{const b=ev.target.closest('button');if(b)exportCat(b.dataset.x)};
+async function exportCat(x){
+ const items=cur.filter(t=>x==='all'||t.category===x).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+ if(!items.length)return msg('Rien à exporter dans cette catégorie.');
+ let pw=null;if(items.some(t=>t.enc))pw=prompt('Second mot de passe des textes Privé (laisser vide pour les ignorer) :');
+ const out=[];let skipped=0;
+ for(const t of items){let v=t;
+  if(t.enc){if(!pw){skipped++;continue}try{v=await unlock(t.enc,pw)}catch{skipped++;continue}}
+  out.push(`${CATN[t.category]} — ${v.title}\n${t.date||''}\n\n${v.body}`)}
+ if(!out.length)return msg('Aucun texte exporté (mot de passe Privé manquant ou incorrect).');
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([out.join('\n\n\n'+'='.repeat(40)+'\n\n\n')],{type:'text/plain;charset=utf-8'}));
+ a.download=`sauvegarde-${x}-${today()}.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+ msg(`${out.length} texte(s) exporté(s)${skipped?`, ${skipped} ignoré(s)`:''}. Ce fichier n’est pas chiffré : rangez-le en lieu sûr.`)}
