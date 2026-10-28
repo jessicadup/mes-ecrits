@@ -25,7 +25,7 @@ $('#unlock').onclick=async()=>{
   $('#gate').hidden=true;$('#app').hidden=false;
  }catch(e){PW=null;m(e.name==='OperationError'?'Mot de passe incorrect.':e.message)}};
 
-$('#sp').onchange=e=>['gpw','gpw2'].forEach(k=>{$('#'+k).type=e.target.checked?'text':'password'});
+$('#sp').onchange=e=>['gpw','gpw2','token'].forEach(k=>{$('#'+k).type=e.target.checked?'text':'password'});
 $('#sp2').onchange=e=>{$('#pw').type=e.target.checked?'text':'password'};
 
 // GitHub : tout le contenu est chiffré avec le mot de passe du site avant l'envoi
