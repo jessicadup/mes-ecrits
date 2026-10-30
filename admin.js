@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-const CATN={roman:'Pour mes filles',libre:'Textes libres',grivois:'Privé'};
+const CATN={roman:'Pour mes filles',libre:'Textes libres',grivois:'Le lieu sûr'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const msg=t=>{$('#msg').textContent=t};
 const today=()=>new Date().toISOString().slice(0,10);
@@ -110,12 +110,12 @@ $('#bk').onclick=ev=>{const b=ev.target.closest('button');if(b)exportCat(b.datas
 async function exportCat(x){
  const items=cur.filter(t=>x==='all'||t.category===x).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
  if(!items.length)return msg('Rien à exporter dans cette catégorie.');
- let pw=null;if(items.some(t=>t.enc))pw=prompt('Second mot de passe des textes Privé (laisser vide pour les ignorer) :');
+ let pw=null;if(items.some(t=>t.enc))pw=prompt('Second mot de passe des textes du lieu sûr (laisser vide pour les ignorer) :');
  const out=[];let skipped=0;
  for(const t of items){let v=t;
   if(t.enc){if(!pw){skipped++;continue}try{v=await unlock(t.enc,pw)}catch{skipped++;continue}}
   out.push(`${CATN[t.category]} — ${v.title}\n${t.date||''}\n\n${v.body}`)}
- if(!out.length)return msg('Aucun texte exporté (mot de passe Privé manquant ou incorrect).');
+ if(!out.length)return msg('Aucun texte exporté (mot de passe Le lieu sûr manquant ou incorrect).');
  const a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob([out.join('\n\n\n'+'='.repeat(40)+'\n\n\n')],{type:'text/plain;charset=utf-8'}));
  a.download=`sauvegarde-${x}-${today()}.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);

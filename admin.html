@@ -22,9 +22,9 @@
 <p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
 <div class="mem"><div id="pie" class="pie" role="img" aria-label="Remplissage de la mémoire"></div><div id="leg" class="leg"></div></div>
 <div class="row"><div><label for="cat">Catégorie</label>
- <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Privé (second mot de passe)</option></select></div>
+ <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr (second mot de passe)</option></select></div>
  <div><label for="date">Date</label><input id="date" type="date"></div></div>
-<div id="pwrow" hidden><label for="pw">Second mot de passe pour ce texte (8 caractères minimum, le même pour tous vos textes Privé)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
+<div id="pwrow" hidden><label for="pw">Second mot de passe pour ce texte (8 caractères minimum, le même pour tous vos textes du lieu sûr)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
 <label for="title">Titre</label><input id="title">
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <label for="body">Texte</label><textarea id="body"></textarea><p class="cnt" id="cnt"></p>
@@ -33,7 +33,7 @@
 <h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
 <h1 style="margin-top:3rem">Sauvegarde</h1>
 <p class="lead">Télécharge vos textes déchiffrés dans un fichier à ranger en lieu sûr (il n’est pas protégé).</p>
-<p class="row" id="bk" style="flex-wrap:wrap"><button class="ghost" data-x="roman" type="button">Pour mes filles</button><button class="ghost" data-x="libre" type="button">Textes libres</button><button class="ghost" data-x="grivois" type="button">Privé</button><button data-x="all" type="button">Tout exporter</button></p>
+<p class="row" id="bk" style="flex-wrap:wrap"><button class="ghost" data-x="roman" type="button">Pour mes filles</button><button class="ghost" data-x="libre" type="button">Textes libres</button><button class="ghost" data-x="grivois" type="button">Le lieu sûr</button><button data-x="all" type="button">Tout exporter</button></p>
 </section>
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>

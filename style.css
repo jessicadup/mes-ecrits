@@ -53,6 +53,10 @@ header,main,footer{position:relative;z-index:1}
 #vine .gold{pointer-events:auto}
 body:not(.home) #vine .gold{display:none}
 body{transition:background .8s,color .8s}
-body.envers{--bg:#1d2228;--ink:#dfe3e8;--soft:#9aa5b1;--line:#343c45;--accent:#b9a6c0;--on:#1d2228;--card:#252b33;--vine:#5f7f6b;--leaf:#3f5a49;--pod:#6f8f79}
-body.envers #vine{transform:scaleY(-1)}
+body.envers{--bg:#0a1128;--ink:#e6c876;--soft:#b79b57;--line:#2a3459;--accent:#e6c876;--on:#0a1128;--card:#101a3a;--gold:#e8c46a;--rope:#f6dc90}
+body.envers #vine{width:150px}
+body.envers #vine .sway{animation:none}
 body.envers nav{display:none}
+body.envers a.item:hover b{color:#fff3c9}
+body.envers ::placeholder{color:var(--soft);opacity:.8}
+@media(max-width:760px){body.envers #vine{width:150px;opacity:.4;left:-24px}}

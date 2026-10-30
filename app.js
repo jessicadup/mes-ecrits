@@ -17,7 +17,7 @@ function home(){
   $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
 
 function cat(c){
- const head=(c==='grivois'?'<a class="back" href="#/">← Revenir</a><br><br>':'')+`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
+ const head=c==='grivois'?'<a class="back" href="#/">← Revenir</a><br><br>':`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
  if(c!=='grivois'){main.innerHTML=head+list(items);return}
  const open=items.filter(t=>plain[t.id]),hidden=items.length-open.length;
  main.innerHTML=head+(open.length||!items.length?list(open):'')+(hidden?`<form id="f" class="lock"><input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe"><button>Entrer</button></form><p class="msg" id="m"></p>`:'');
@@ -29,7 +29,7 @@ function cat(c){
 function show(id){
  const t=texts.find(x=>x.id===id);if(!t)return home();
  const v=t.enc?plain[id]:t;if(!v){location.hash='#/'+(t.category==='grivois'?'envers':t.category);return}
- main.innerHTML=`<a class="back" href="#/${t.category==='grivois'?'envers':t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(v.body)}</p><div class="text">${body(v.body)}</div>`;
+ main.innerHTML=`<a class="back" href="#/${t.category==='grivois'?'envers':t.category}">← ${t.category==='grivois'?'Le lieu sûr':CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(v.body)}</p><div class="text">${body(v.body)}</div>`;
 }
 
 function route(){
@@ -37,7 +37,9 @@ function route(){
  const h=location.hash.replace(/^#\/?/,'').split('/'),k=h[0];
  const view=k==='t'?'t':k==='envers'?'envers':(CATS[k]&&k!=='grivois')?k:'home';
  const tx=view==='t'?texts.find(x=>x.id===h[1]):null;
- document.body.classList.toggle('envers',view==='envers'||(tx&&tx.category==='grivois'));
+ const env=!!(view==='envers'||(tx&&tx.category==='grivois'));
+ document.body.classList.toggle('envers',env);
+ document.querySelector('.brand').textContent=document.title=env?'Le lieu sûr':'Mots après maux';
  document.body.classList.toggle('home',view==='home');
  document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#/'+k));
  scrollTo(0,0);
