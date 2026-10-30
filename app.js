@@ -11,13 +11,13 @@ const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCa
 const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
 
 function home(){
- main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
+ main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).filter(([k])=>k!=='grivois').map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
  $('#q').oninput=e=>{const q=nrm(e.target.value.trim());$('#cats').hidden=!!q;
-  const r=q?texts.filter(t=>{const v=plain[t.id]||t;return v.title&&nrm(v.title+' '+v.body).includes(q)}):[];
+  const r=q?texts.filter(t=>{const v=plain[t.id]||t;return t.category!=='grivois'&&v.title&&nrm(v.title+' '+v.body).includes(q)}):[];
   $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
 
 function cat(c){
- const head=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
+ const head=(c==='grivois'?'<a class="back" href="#/">← Revenir</a><br><br>':'')+`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`,items=of(c);
  if(c!=='grivois'){main.innerHTML=head+list(items);return}
  const open=items.filter(t=>plain[t.id]),hidden=items.length-open.length;
  main.innerHTML=head+(open.length||!items.length?list(open):'')+(hidden?`<form id="f" class="lock"><input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe"><button>Entrer</button></form><p class="msg" id="m"></p>`:'');
@@ -28,17 +28,22 @@ function cat(c){
 
 function show(id){
  const t=texts.find(x=>x.id===id);if(!t)return home();
- const v=t.enc?plain[id]:t;if(!v){location.hash='#/'+t.category;return}
- main.innerHTML=`<a class="back" href="#/${t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(v.body)}</p><div class="text">${body(v.body)}</div>`;
+ const v=t.enc?plain[id]:t;if(!v){location.hash='#/'+(t.category==='grivois'?'envers':t.category);return}
+ main.innerHTML=`<a class="back" href="#/${t.category==='grivois'?'envers':t.category}">← ${CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(v.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(v.body)}</p><div class="text">${body(v.body)}</div>`;
 }
 
 function route(){
  if(!open)return;
- const h=location.hash.replace(/^#\/?/,'').split('/');
- document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#/'+h[0]));
+ const h=location.hash.replace(/^#\/?/,'').split('/'),k=h[0];
+ const view=k==='t'?'t':k==='envers'?'envers':(CATS[k]&&k!=='grivois')?k:'home';
+ const tx=view==='t'?texts.find(x=>x.id===h[1]):null;
+ document.body.classList.toggle('envers',view==='envers'||(tx&&tx.category==='grivois'));
+ document.body.classList.toggle('home',view==='home');
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#/'+k));
  scrollTo(0,0);
- if(h[0]==='t')return show(h[1]);
- CATS[h[0]]?cat(h[0]):home();
+ if(view==='t')return show(h[1]);
+ if(view==='envers')return cat('grivois');
+ view==='home'?home():cat(view);
 }
 addEventListener('hashchange',route);
 function gate(){

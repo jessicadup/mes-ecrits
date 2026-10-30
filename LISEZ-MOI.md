@@ -21,3 +21,8 @@
 - Le site s'appelle « Mots après maux » (à changer dans `index.html`, deux endroits : le titre et le nom en haut).
 - Page admin : caractères, mots et temps de lecture de chaque texte, camembert de remplissage de la mémoire (limite de 1 Mo pour ce fonctionnement) et boutons de sauvegarde par dossier.
 - Site : barre de recherche sur l'accueil (les textes Privé n'y sont cherchables qu'une fois déverrouillés), temps de lecture ⏳ et haricot magique qui pousse sur le côté quand on fait défiler la page.
+
+# La page cachée (l'envers)
+- Elle contient les textes « Privé » et demande le second mot de passe. Elle n'apparaît plus dans le menu ni sur l'accueil.
+- Pour y entrer : sur la page d'accueil, touchez la **cosse dorée** sur la tige du haricot (côté gauche, vers le bas de l'écran). Elle porte un tout petit 8.
+- Adresse directe : `.../index.html#/envers`. La cosse n'apparaît que sur l'accueil.
