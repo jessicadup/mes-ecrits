@@ -102,14 +102,16 @@ $('#llist').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
   try{const{list,sha}=await load('lieu',LP);lcur=list.filter(x=>x.id!==b.dataset.ld);await save(lcur,sha,'Mise a jour','lieu',LP);renderLieu();msg('Texte supprimé.')}catch(e){msg(bad(e))}}
  if(b.dataset.le){const t=lcur.find(x=>x.id===b.dataset.le);editId=t.id;$('#cat').value='grivois';$('#cat').onchange();$('#date').value=t.date||today();
   $('#title').value=t.title;$('#body').value=t.body;$('#pw').value=LP;upd();$('#pub').textContent='Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
-$('#mig').onclick=async()=>{const p=prompt('Mot de passe de vos anciens textes Privé (il deviendra celui du lieu sûr, 10 caractères minimum) :');
- if(!p||p.length<10)return msg('Mot de passe : 10 caractères minimum.');
- try{msg('Transfert en cours…');const M=await load(),L=await load('lieu',p),moved=new Set();
-  for(const t of M.list.filter(t=>t.category==='grivois')){try{const v=await unlock(t.enc,p);L.list.push({id:t.id,date:t.date,title:v.title,body:v.body,n:cnt(v.body),by:'moi'});moved.add(t.id)}catch{}}
-  if(!moved.size)return msg('Ce mot de passe ne correspond à aucun ancien texte.');
-  await save(L.list,L.sha,'Mise a jour','lieu',p);
+$('#mig').onclick=async()=>{
+ const po=prompt('Ancien mot de passe de vos textes Privé :');if(!po)return;
+ const pn=prompt('Mot de passe du lieu sûr (10 caractères minimum). Vous pouvez reprendre l’ancien s’il est assez long, ou en choisir un nouveau :');
+ if(!pn||pn.length<10)return msg('Le mot de passe du lieu sûr doit avoir 10 caractères minimum. Rien n’a été transféré.');
+ try{msg('Transfert en cours…');const M=await load(),L=await load('lieu',pn),moved=new Set();
+  for(const t of M.list.filter(t=>t.category==='grivois')){try{const v=await unlock(t.enc,po);L.list.push({id:t.id,date:t.date,title:v.title,body:v.body,n:cnt(v.body),by:'moi'});moved.add(t.id)}catch{}}
+  if(!moved.size)return msg('L’ancien mot de passe ne correspond à aucun ancien texte.');
+  await save(L.list,L.sha,'Mise a jour','lieu',pn);
   await save(M.list.filter(t=>!moved.has(t.id)),M.sha,'Mise a jour du contenu');
-  LP=p;lcur=L.list;await refresh();renderLieu();msg(moved.size+' texte(s) transféré(s) vers le lieu sûr.')}catch(e){msg(bad(e))}};
+  LP=pn;lcur=L.list;await refresh();renderLieu();msg(moved.size+' texte(s) transféré(s) vers le lieu sûr.')}catch(e){msg(bad(e))}};
 
 // Camembert de mémoire (site principal) et sauvegarde
 const LIMIT=1000000,COL={roman:'var(--accent)',libre:'#8fae9b',grivois:'#c9a9a6'};
