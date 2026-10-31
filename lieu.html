@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="referrer" content="no-referrer"><title>Écrire</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header><span class="brand">Écrire</span></header>
+<main>
+<section id="gate" class="gate">
+ <label for="gpw">Mot de passe</label><input id="gpw" type="password" autocomplete="current-password">
+ <div id="first" hidden>
+  <label for="token">Jeton d’accès (reçu avec le mot de passe ; reste chiffré sur cet appareil)</label><input id="token" type="password" autocomplete="off">
+  <details><summary>Dépôt</summary><label for="owner">Identifiant GitHub</label><input id="owner"><label for="repo2">Nom du dépôt</label><input id="repo2"></details>
+ </div>
+ <label class="show"><input type="checkbox" id="sp"> Afficher les mots de passe</label>
+ <p><button id="unlock" type="button">Entrer</button></p><p class="msg" id="gmsg" role="status"></p>
+</section>
+
+<section id="app" hidden>
+<p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
+<div><label for="date">Date</label><input id="date" type="date"></div>
+<label for="title">Titre</label><input id="title">
+<label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
+<label for="body">Texte</label><textarea id="body"></textarea><p class="cnt" id="cnt"></p>
+<p class="row"><button id="pub" type="button">Publier</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
+<p class="msg" id="msg" role="status"></p>
+<h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
+</section>
+</main><footer></footer>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="config.js"></script><script src="crypto.js"></script><script src="lieu.js"></script>
+</body></html>

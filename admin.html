@@ -11,8 +11,8 @@
  <div id="first" hidden>
   <label for="gpw2">Confirmez le mot de passe</label><input id="gpw2" type="password" autocomplete="new-password">
   <label for="token">Jeton GitHub (reste chiffré sur cet appareil)</label><input id="token" type="password" autocomplete="off">
-  <details><summary>Dépôt GitHub</summary>
-   <label for="owner">Identifiant GitHub</label><input id="owner"><label for="repo">Nom du dépôt</label><input id="repo"><label for="branch">Branche</label><input id="branch"></details>
+  <details><summary>Dépôts GitHub</summary>
+   <label for="owner">Identifiant GitHub</label><input id="owner"><label for="repo">Dépôt du site</label><input id="repo"><label for="repo2">Dépôt du lieu sûr</label><input id="repo2"><label for="branch">Branche</label><input id="branch"></details>
  </div>
  <label class="show"><input type="checkbox" id="sp"> Afficher les mots de passe</label>
  <p><button id="unlock" type="button">Entrer</button></p><p class="msg" id="gmsg" role="status"></p>
@@ -22,15 +22,21 @@
 <p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
 <div class="mem"><div id="pie" class="pie" role="img" aria-label="Remplissage de la mémoire"></div><div id="leg" class="leg"></div></div>
 <div class="row"><div><label for="cat">Catégorie</label>
- <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr (second mot de passe)</option></select></div>
+ <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr</option></select></div>
  <div><label for="date">Date</label><input id="date" type="date"></div></div>
-<div id="pwrow" hidden><label for="pw">Second mot de passe pour ce texte (8 caractères minimum, le même pour tous vos textes du lieu sûr)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
+<div id="pwrow" hidden><label for="pw">Mot de passe du lieu sûr (10 caractères minimum, le même pour tous ses textes et pour votre invité)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
 <label for="title">Titre</label><input id="title">
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <label for="body">Texte</label><textarea id="body"></textarea><p class="cnt" id="cnt"></p>
 <p class="row"><button id="pub" type="button">Publier</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
 <p class="msg" id="msg" role="status"></p>
+
 <h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
+
+<h1 style="margin-top:3rem">Le lieu sûr</h1>
+<p><button id="lieuOpen" class="ghost" type="button">Afficher les textes du lieu sûr</button> <button id="mig" type="button" hidden>Transférer mes anciens textes Privé</button></p>
+<div id="llist"></div>
+
 <h1 style="margin-top:3rem">Sauvegarde</h1>
 <p class="lead">Télécharge vos textes déchiffrés dans un fichier à ranger en lieu sûr (il n’est pas protégé).</p>
 <p class="row" id="bk" style="flex-wrap:wrap"><button class="ghost" data-x="roman" type="button">Pour mes filles</button><button class="ghost" data-x="libre" type="button">Textes libres</button><button class="ghost" data-x="grivois" type="button">Le lieu sûr</button><button data-x="all" type="button">Tout exporter</button></p>
@@ -38,5 +44,5 @@
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="crypto.js"></script><script src="admin.js"></script>
+<script src="config.js"></script><script src="crypto.js"></script><script src="admin.js"></script>
 </body></html>
