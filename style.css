@@ -75,9 +75,9 @@ body.envers #vine{display:none}
 .his{text-align:right}
 .text ul,.text ol{margin:0 0 1.2em 1.4em;padding:0}.text li{margin:.2em 0}
 .tb{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0}
-.tb select{width:auto;padding:.4rem .5rem;font-size:.85rem}
-.tb button{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:.4rem .7rem;font-size:.85rem}
-.ed{min-height:18rem;padding:.9rem 1rem;border:1px solid var(--line);border-radius:6px;background:var(--card);font:1.15rem/1.65 var(--serif);overflow-wrap:anywhere}
+.tb select,.band select{width:auto;padding:.4rem .5rem;font-size:.85rem}
+.tb button,.band button{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:.4rem .7rem;font-size:.85rem}
+.ed{min-height:18rem;padding:.7rem .85rem;border:1px solid var(--line);border-radius:6px;background:var(--card);font:1.15rem/1.65 var(--serif);overflow-wrap:anywhere}
 .ed:empty:before{content:attr(data-ph);color:var(--soft)}
 .ed p{margin:0 0 .9em}.ed ul,.ed ol{margin:0 0 .9em 1.4em;padding:0}
 .hint{margin-top:.2rem}
@@ -85,3 +85,4 @@ body.envers #vine{display:none}
 @media(prefers-color-scheme:dark){.dlg{background:rgba(31,35,38,.75)}}
 .dlg>div{width:min(26rem,90vw);padding:1.6rem;background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center}
 .badge{color:var(--accent)}
+.band{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0 0;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--card)}

@@ -21,12 +21,12 @@
 <section id="app" hidden>
 <p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
 <div class="mem"><div id="pie" class="pie" role="img" aria-label="Remplissage de la mémoire"></div><div id="leg" class="leg"></div></div>
+<label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <div class="row"><div><label for="cat">Catégorie</label>
  <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr</option></select></div>
  <div><label for="date">Date</label><input id="date" type="date"></div></div>
 <div id="pwrow" hidden><label for="pw">Mot de passe du lieu sûr (10 caractères minimum, le même pour tous ses textes et pour votre invité)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
 <label for="title">Titre</label><input id="title">
-<label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <label>Texte</label><div id="edbox"></div><p class="cnt" id="cnt"></p>
 <p class="row" style="flex-wrap:wrap"><button id="pub" type="button">Publier</button><button id="draft" class="ghost" type="button">Enregistrer comme brouillon</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
 <p class="msg" id="msg" role="status"></p>

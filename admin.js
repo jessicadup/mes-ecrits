@@ -7,7 +7,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let editId=null,cur=[],lcur=[],PW=null,TOK='',LP=null;
-const ED=initEditor($('#edbox'),'Écrivez ici…');
+const ED=initEditor($('#edbox'),'Écrivez ici…',true);
 
 const S=JSON.parse(localStorage.getItem('cfg')||'{}');
 const host=location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'';
