@@ -7,6 +7,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let editId=null,cur=[],lcur=[],PW=null,TOK='',LP=null;
+const ED=initEditor($('#edbox'),'Écrivez ici…');
 
 const S=JSON.parse(localStorage.getItem('cfg')||'{}');
 const host=location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'';
@@ -47,61 +48,68 @@ const meta=t=>{const n=t.n||(t.body!=null?cnt(t.body):null);return n?` · ${fr(n
 // Formulaire
 $('#date').value=today();
 $('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois'};
-function reset(){editId=null;['title','body','pw','file'].forEach(k=>$('#'+k).value='');$('#date').value=today();$('#pub').textContent='Publier';upd()}
+function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
-function upd(){const n=cnt($('#body').value);$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
-$('#body').oninput=upd;
+function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
+ED.onInput(upd);
 
-$('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let t='';
+$('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let h='';
  try{
-  if(n.endsWith('.docx'))t=(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value;
-  else if(n.endsWith('.pdf')){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  if(n.endsWith('.docx'))h=(await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()})).value;
+  else if(n.endsWith('.pdf')){let t='';pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
    const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
-   for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();t+=c.items.map(i=>i.str+(i.hasEOL?'\n':'')).join('')+'\n\n'}}
+   for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();t+=c.items.map(i=>i.str+(i.hasEOL?'\n':'')).join('')+'\n\n'}h=plainToHtml(t)}
   else if(n.endsWith('.doc'))return msg('Ce vieux format .doc n’est pas lisible ici : ouvrez-le dans Word, « Enregistrer sous » .docx, puis importez-le.');
-  else t=await f.text();
+  else h=plainToHtml(await f.text());
  }catch(e){return msg('Lecture impossible : '+e.message)}
- $('#body').value=t.trim();if(!$('#title').value)$('#title').value=f.name.replace(/\.[^.]+$/,'');
+ ED.set(h);if(!$('#title').value)$('#title').value=f.name.replace(/\.[^.]+$/,'');
  upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
-$('#pub').onclick=async()=>{
- const cat=$('#cat').value,title=$('#title').value.trim(),text=$('#body').value.trim(),date=$('#date').value,id=editId||Date.now().toString(36);
- if(!title||!text)return msg('Il manque le titre ou le texte.');
+async function send(draft){
+ const cat=$('#cat').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
+ if(!text)return msg('Il manque le texte.');
+ if(!title)return msg('Il manque le titre.');
+ const was=(cat==='grivois'?lcur:cur).find(x=>x.id===id);
+ if(draft&&was&&!was.draft&&!await confirmBox('Ce texte est en ligne. Le retirer du site et le garder en brouillon ?','Retirer du site'))return;
+ if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » dans « ${CATN[cat]} » ?`))return;
  try{
+  const base={id,date,title,body:text,html,n:cnt(text)};if(draft)base.draft=true;
   if(cat==='grivois'){
-   const p=$('#pw').value;if(p.length<10)return msg('Mot de passe du lieu sûr : 10 caractères minimum.');
-   msg('Publication en cours…');
-   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={id,date,title,body:text,n:cnt(text),by:(i>=0&&list[i].by)||'moi'};
+   const p=$('#pw').value||LP||'';if(p.length<10)return msg('Mot de passe du lieu sûr : 10 caractères minimum.');
+   msg('Enregistrement en cours…');
+   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour','lieu',p);LP=p;lcur=list;renderLieu();
   }else{
-   msg('Publication en cours…');
-   const{list,sha}=await load(),e={id,category:cat,date,n:cnt(text),title,body:text},i=list.findIndex(x=>x.id===id);
+   msg('Enregistrement en cours…');
+   const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');refresh();
   }
-  reset();msg('Publié. Le texte apparaît sur le site dans une à deux minutes.');
- }catch(err){msg(bad(err))}};
+  reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
+ }catch(err){msg(bad(err))}}
+$('#pub').onclick=()=>send(false);
+$('#draft').onclick=()=>send(true);
 
 // Mes textes (site principal)
 async function refresh(strict){
  try{const{list,size}=await load();cur=list;pie(list,size);
   $('#mig').hidden=!list.some(t=>t.category==='grivois');
-  $('#list').innerHTML=list.length?sortD(list).map(t=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':esc(t.title)}</b><span>${CATN[t.category]} · ${t.date||''}${meta(t)}</span></div><div style="flex:none">${t.enc?'':`<button class="ghost" data-e="${t.id}">Modifier</button> `}<button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
+  $('#list').innerHTML=list.length?sortD(list).map(t=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':esc(t.title)}</b><span>${CATN[t.category]} · ${t.date||''}${t.draft?' · <span class="badge">brouillon</span>':''}${meta(t)}</span></div><div style="flex:none">${t.enc?'':`<button class="ghost" data-e="${t.id}">Modifier</button> `}<button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
  }catch(e){if(strict)throw e;msg(bad(e))}}
 $('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.d){if(!confirm('Supprimer ce texte définitivement ?'))return;
   try{const{list,sha}=await load();await save(list.filter(x=>x.id!==b.dataset.d),sha,'Mise a jour du contenu');msg('Texte supprimé. Le site se met à jour dans une à deux minutes.');refresh()}catch(e){msg(bad(e))}}
  if(b.dataset.e){const t=cur.find(x=>x.id===b.dataset.e);editId=t.id;$('#cat').value=t.category;$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;$('#body').value=t.body;upd();$('#pub').textContent='Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
 
 // Le lieu sûr (fichier séparé, son propre mot de passe)
-function renderLieu(){$('#llist').innerHTML=lcur.length?sortD(lcur).map(t=>`<div class="item row"><div><b>${esc(t.title)}</b><span>${t.date||''}${t.by==='invite'?' · invité':''}${meta(t)}</span></div><div style="flex:none"><button class="ghost" data-le="${t.id}">Modifier</button> <button class="ghost" data-ld="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>'}
+function renderLieu(){const vis=lcur.filter(t=>!(t.by==='invite'&&t.draft));$('#llist').innerHTML=vis.length?sortD(vis).map(t=>`<div class="item row"><div><b>${esc(t.title)}</b><span>${t.date||''}${t.by==='invite'?' · invité':''}${t.draft?' · <span class="badge">brouillon</span>':''}${meta(t)}</span></div><div style="flex:none"><button class="ghost" data-le="${t.id}">Modifier</button> <button class="ghost" data-ld="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>'}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.ld){if(!confirm('Supprimer ce texte définitivement ?'))return;
   try{const{list,sha}=await load('lieu',LP);lcur=list.filter(x=>x.id!==b.dataset.ld);await save(lcur,sha,'Mise a jour','lieu',LP);renderLieu();msg('Texte supprimé.')}catch(e){msg(bad(e))}}
  if(b.dataset.le){const t=lcur.find(x=>x.id===b.dataset.le);editId=t.id;$('#cat').value='grivois';$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;$('#body').value=t.body;$('#pw').value=LP;upd();$('#pub').textContent='Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#pw').value=LP;upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
 $('#mig').onclick=async()=>{
  const po=prompt('Ancien mot de passe de vos textes Privé :');if(!po)return;
  const pn=prompt('Mot de passe du lieu sûr (10 caractères minimum). Vous pouvez reprendre l’ancien s’il est assez long, ou en choisir un nouveau :');

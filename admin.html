@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="referrer" content="no-referrer"><title>Accès</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css"></head>
 <body>
 <header><a class="brand" href="index.html">Écrire</a><nav><a href="index.html">Voir le site</a></nav></header>
@@ -27,8 +27,8 @@
 <div id="pwrow" hidden><label for="pw">Mot de passe du lieu sûr (10 caractères minimum, le même pour tous ses textes et pour votre invité)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
 <label for="title">Titre</label><input id="title">
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
-<label for="body">Texte</label><textarea id="body"></textarea><p class="cnt" id="cnt"></p>
-<p class="row"><button id="pub" type="button">Publier</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
+<label>Texte</label><div id="edbox"></div><p class="cnt" id="cnt"></p>
+<p class="row" style="flex-wrap:wrap"><button id="pub" type="button">Publier</button><button id="draft" class="ghost" type="button">Enregistrer comme brouillon</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
 <p class="msg" id="msg" role="status"></p>
 
 <h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
@@ -44,5 +44,5 @@
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js"></script><script src="crypto.js"></script><script src="admin.js"></script>
+<script src="config.js"></script><script src="rich.js"></script><script src="crypto.js"></script><script src="admin.js"></script>
 </body></html>

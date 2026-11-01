@@ -7,10 +7,13 @@ const LIEU_URL=()=>`https://raw.githubusercontent.com/${OWNER}/${CFG.lieu}/${CFG
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
 const body=t=>esc(t).split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
 const of=c=>texts.filter(t=>t.category===c).sort((a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1));
+const KNOT={e:'<svg class="knot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 12C4 5 7 1 12 1C17 1 20 5 12 12"/><path d="M12 12C4 19 7 23 12 23C17 23 20 19 12 12"/><path d="M9 15L15 9" stroke="var(--bg)" stroke-width="4.6"/><path d="M9 15L15 9"/></svg>',c:'<svg class="knot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="9" cy="12" rx="7.5" ry="6"/><ellipse cx="15" cy="12" rx="7.5" ry="6" stroke="var(--bg)" stroke-width="4.6"/><ellipse cx="15" cy="12" rx="7.5" ry="6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6" stroke="var(--bg)" stroke-width="4.6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6"/><path d="M3.2 16L1 21M20.8 8L23 3"/></svg>'};
+const knot=t=>t.category==='grivois'?(t.by==='invite'?KNOT.c:KNOT.e):'';
+const sortD=l=>[...l].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 const wc=s=>(String(s).match(/\S+/g)||[]).length;
 const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
 const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
+const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${knot(t)}${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
 
 function home(){
  main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).filter(([k])=>k!=='grivois').map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
@@ -19,14 +22,16 @@ function home(){
   $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
 
 function cat(c){
- if(c==='grivois'){main.innerHTML='<a class="back" href="#/">← Revenir</a><br><br>'+list([...lieu].sort((a,b)=>(b.date||'').localeCompare(a.date||'')));return}
+ if(c==='grivois'){
+  const mine=sortD(lieu.filter(x=>x.by!=='invite')),his=sortD(lieu.filter(x=>x.by==='invite'));
+  main.innerHTML='<a class="back" href="#/">← Revenir</a>'+(lieu.length?`<div class="mir"><section class="mine">${list(mine)==='<p class="empty">Rien ici pour l’instant.</p>'?'':list(mine)}</section><section class="his">${his.length?list(his):''}</section></div>`:'<p class="empty">Rien ici pour l’instant.</p>');return}
  main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+list(of(c));
 }
 
 function show(id){
  const t=texts.find(x=>x.id===id)||lieu.find(x=>x.id===id);if(!t)return home();
  const g=t.category==='grivois';if(g&&!lieuOk){location.hash='#/envers';return}
- main.innerHTML=`<a class="back" href="#/${g?'envers':t.category}">← ${g?'Le lieu sûr':CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text">${body(t.body)}</div>`;
+ main.innerHTML=`<a class="back" href="#/${g?'envers':t.category}">← ${g?'Le lieu sûr':CATS[t.category][0]}</a><h1 style="margin-top:1.5rem">${knot(t)}${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text">${t.html?sanitize(t.html):body(t.body)}</div>`;
 }
 
 let lieuOk=false;
@@ -61,7 +66,7 @@ function openDoor(){
  d.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
  d.querySelector('form').onsubmit=async e=>{e.preventDefault();$('#dm').textContent='Vérification…';
   try{const r=await fetch(LIEU_URL());if(!r.ok)throw 0;const o=await r.json();
-   lieu=(await unlock(o.enc,$('#dp').value)).map(x=>({...x,category:'grivois'}));
+   lieu=(await unlock(o.enc,$('#dp').value)).filter(x=>!x.draft).map(x=>({...x,category:'grivois'}));
    lieuOk=true;close();location.hash==='#/envers'?route():location.hash='#/envers'}
   catch{$('#dm').textContent='Mot de passe incorrect.'}};
 }
@@ -71,7 +76,7 @@ function gate(){
  $('#sp').onchange=e=>{$('#gp').type=e.target.checked?'text':'password'};
  $('#g').onsubmit=async e=>{e.preventDefault();$('#gm').textContent='Vérification…';
   try{const r=await fetch('content/texts.json?'+Date.now()),o=r.ok?await r.json():[];
-   texts=(Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value)).filter(t=>t.category!=='grivois');
+   texts=(Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value)).filter(t=>t.category!=='grivois'&&!t.draft);
    open=true;$('nav').hidden=false;route()}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
 gate();
 

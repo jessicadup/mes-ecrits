@@ -9,7 +9,7 @@
 - Pour rendre aussi le dépôt invisible, passez-le en « Private » (GitHub > Settings > General > Danger Zone). Publier un site depuis un dépôt privé demande GitHub Pro (environ 4 $/mois).
 
 # Mise en ligne
-1. Dépôt GitHub `mes-ecrits`, y déposer tous les fichiers (dossier `content` compris), « Commit changes ».
+1. Dépôt GitHub `mes-ecrits`, y déposer tous les fichiers de ce dossier, « Commit changes ». Le dossier `content` (vos textes) est créé tout seul à la première publication : n'importez jamais de fichier `texts.json`, il écraserait vos textes.
 2. Settings > Pages > « Deploy from a branch » > `main` / `(root)` > Save.
 3. Settings du compte > Developer settings > Fine-grained tokens : jeton limité à ce dépôt, « Contents : Read and write ».
 4. Ouvrez `.../admin.html` : choisissez le mot de passe du site (2 fois), collez le jeton, « Entrer ».
@@ -40,8 +40,15 @@ Le contenu du lieu sûr est maintenant dans un **second dépôt GitHub** (`lieu-
 
 1. Créez un dépôt **public** nommé `lieu-sur` (cochez « Add a README file »).
 2. Votre jeton GitHub : modifiez-le (Developer settings > Fine-grained tokens > votre jeton > Edit) pour ajouter le dépôt `lieu-sur`, avec « Contents : Read and write ».
-3. Déposez les fichiers du zip dans le dépôt du site (sans toucher au dossier `content`), dont les nouveaux `config.js`, `lieu.html` et `lieu.js`.
+3. Déposez les fichiers du zip dans le dépôt du site , dont les nouveaux `config.js`, `lieu.html` et `lieu.js`.
 4. Dans la page admin, publiez un premier texte dans « Le lieu sûr » : le mot de passe que vous saisissez devient celui du lieu sûr (tapez-le avec la case « Afficher » cochée pour éviter une faute). Si vous aviez d'anciens textes Privé, utilisez le bouton « Transférer mes anciens textes Privé ».
 5. Pour l'invité : créez un **second jeton** limité au seul dépôt `lieu-sur` (Contents : Read and write). Donnez-lui, par des canaux différents : l'adresse `.../lieu.html`, le mot de passe du lieu sûr et ce jeton. Il ne peut ni voir ni modifier le reste. Pour lui retirer l'accès : supprimez ce jeton.
 
 Limites : l'invité peut lire tout ce qui est dans le lieu sûr (c'est une page partagée) ; sa page n'affiche et ne modifie que ses propres textes, mais ce n'est pas un mur technique contre quelqu'un de très déterminé. Le dépôt `lieu-sur` étant public, la seule protection est le mot de passe du lieu sûr : choisissez une phrase longue.
+
+# Mise en page, brouillons, nouveau décor du lieu sûr
+- Les deux pages d'édition ont une barre d'outils : police, taille, couleur, surlignage, gras, italique, listes à puces ou numérotées, effacer la mise en forme. Sélectionnez le texte à modifier avant de choisir. Un fichier Word (.docx) garde son gras, son italique et ses listes.
+- « Publier » demande une confirmation. « Enregistrer comme brouillon » garde le texte sans le mettre en ligne (visible seulement dans votre liste, marqué « brouillon »).
+- Le texte mis en forme est filtré à l'affichage : seules les mises en forme ci-dessus sont acceptées.
+- Le lieu sûr : vos textes en haut à gauche (nœud de huit), ceux de l'invité en bas à droite (nœud de carrick). Une corde dorée en arc relie la femme encordée (mains libres, pieds liés) à l'homme debout qui la tient. Décor visible sur écran de plus de 900 px.
+- Fichiers à mettre à jour : tous ceux du zip, dont le nouveau `rich.js`.

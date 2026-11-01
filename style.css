@@ -64,7 +64,24 @@ body.envers ::placeholder{color:var(--soft);opacity:.8}
 @media(prefers-color-scheme:dark){#door{background:rgba(31,35,38,.75)}}
 #door form{width:min(22rem,88vw);padding:1.6rem;background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center}
 #door p{margin:.8rem 0 0}
-#vine2{position:fixed;right:0;top:0;width:190px;height:100vh;pointer-events:none;z-index:0;overflow:visible;display:none}
-body.envers #vine2{display:block}
-@media(max-width:900px){body.envers #vine2{display:none}}
-@media print{#vine2{display:none}}
+body.envers @media(max-width:900px){body.envers @media print{#scene{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:0;display:none}
+body.envers #scene{display:block}
+body.envers #vine{display:none}
+@media(max-width:900px){body.envers #scene{display:none}}
+@media print{#scene{display:none}}
+.knot{width:1.25rem;height:1.25rem;vertical-align:-.18em;margin-right:.55rem;color:var(--accent);flex:none}
+.his .knot{margin-left:0}
+.mir{display:flex;flex-direction:column;justify-content:space-between;gap:3rem;margin-top:2rem;min-height:calc(100vh - 17rem)}
+.his{text-align:right}
+.text ul,.text ol{margin:0 0 1.2em 1.4em;padding:0}.text li{margin:.2em 0}
+.tb{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0}
+.tb select{width:auto;padding:.4rem .5rem;font-size:.85rem}
+.tb button{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:.4rem .7rem;font-size:.85rem}
+.ed{min-height:18rem;padding:.9rem 1rem;border:1px solid var(--line);border-radius:6px;background:var(--card);font:1.15rem/1.65 var(--serif);overflow-wrap:anywhere}
+.ed:empty:before{content:attr(data-ph);color:var(--soft)}
+.ed p{margin:0 0 .9em}.ed ul,.ed ol{margin:0 0 .9em 1.4em;padding:0}
+.hint{margin-top:.2rem}
+.dlg{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(244,246,243,.75);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+@media(prefers-color-scheme:dark){.dlg{background:rgba(31,35,38,.75)}}
+.dlg>div{width:min(26rem,90vw);padding:1.6rem;background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center}
+.badge{color:var(--accent)}
