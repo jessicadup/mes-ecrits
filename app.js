@@ -7,7 +7,7 @@ const LIEU_URL=()=>`https://raw.githubusercontent.com/${OWNER}/${CFG.lieu}/${CFG
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
 const body=t=>esc(t).split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
 const of=c=>texts.filter(t=>t.category===c).sort((a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1));
-const KNOT={e:'<svg class="knot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 12C4 5 7 1 12 1C17 1 20 5 12 12"/><path d="M12 12C4 19 7 23 12 23C17 23 20 19 12 12"/><path d="M9 15L15 9" stroke="var(--bg)" stroke-width="4.6"/><path d="M9 15L15 9"/></svg>',c:'<svg class="knot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><ellipse cx="9" cy="12" rx="7.5" ry="6"/><ellipse cx="15" cy="12" rx="7.5" ry="6" stroke="var(--bg)" stroke-width="4.6"/><ellipse cx="15" cy="12" rx="7.5" ry="6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6" stroke="var(--bg)" stroke-width="4.6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6"/><path d="M3.2 16L1 21M20.8 8L23 3"/></svg>'};
+const KNOT={e:'<svg class="knot" viewBox="0 0 32 16" width="34" height="17" style="width:1.9em;height:.95em;vertical-align:-.14em;margin-right:.5em;color:var(--accent);flex:none" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M16 8C9.5 1.5 1.5 3 1.5 8C1.5 13 9.5 14.5 16 8"/><path d="M16 8C22.5 1.5 30.5 3 30.5 8C30.5 13 22.5 14.5 16 8"/><path d="M13 10.6L19 5.4" stroke="var(--bg)" stroke-width="4.4"/><path d="M13 10.6L19 5.4"/></svg>',c:'<svg class="knot" viewBox="-1 1.5 26 21" width="26" height="21" style="width:1.3em;height:1.05em;vertical-align:-.16em;margin-right:.5em;color:var(--accent);flex:none" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><ellipse cx="9" cy="12" rx="7.5" ry="6"/><ellipse cx="15" cy="12" rx="7.5" ry="6" stroke="var(--bg)" stroke-width="4.4"/><ellipse cx="15" cy="12" rx="7.5" ry="6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6" stroke="var(--bg)" stroke-width="4.4"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6"/><path d="M3.2 16L1 21M20.8 8L23 3"/></svg>'};
 const knot=t=>t.category==='grivois'?(t.by==='invite'?KNOT.c:KNOT.e):'';
 const sortD=l=>[...l].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 const wc=s=>(String(s).match(/\S+/g)||[]).length;
@@ -24,7 +24,7 @@ function home(){
 function cat(c){
  if(c==='grivois'){
   const mine=sortD(lieu.filter(x=>x.by!=='invite')),his=sortD(lieu.filter(x=>x.by==='invite'));
-  main.innerHTML='<a class="back" href="#/">← Revenir</a>'+(lieu.length?`<div class="mir"><section class="mine">${list(mine)==='<p class="empty">Rien ici pour l’instant.</p>'?'':list(mine)}</section><section class="his">${his.length?list(his):''}</section></div>`:'<p class="empty">Rien ici pour l’instant.</p>');return}
+  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir"><section class="mine">'+(lieu.length?(mine.length?list(mine):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his">'+(his.length?list(his):'')+'</section></div>';return}
  main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+list(of(c));
 }
 
