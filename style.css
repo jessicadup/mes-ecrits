@@ -86,3 +86,8 @@ body.envers #vine{display:none}
 .dlg>div{width:min(26rem,90vw);padding:1.6rem;background:var(--card);border:1px solid var(--line);border-radius:10px;text-align:center}
 .badge{color:var(--accent)}
 .band{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0 0;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+.menu{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin:2rem 0 1rem;padding-bottom:1.4rem;border-bottom:1px solid var(--line)}
+.menu button,.menu a{font:inherit;font-size:.95rem;background:none;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:.65rem 1.2rem;cursor:pointer;text-decoration:none}
+.menu button:hover,.menu a:hover{border-color:var(--accent)}
+.menu .on{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.smsg{position:sticky;top:0;z-index:5;background:var(--bg);padding:.3rem 0}

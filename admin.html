@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css"></head>
 <body>
-<header><a class="brand" href="index.html">Écrire</a><nav><a href="index.html">Voir le site</a></nav></header>
+<header><span class="brand">Écrire</span></header>
 <main>
 <section id="gate" class="gate">
  <label for="gpw">Mot de passe du site</label><input id="gpw" type="password" autocomplete="current-password">
@@ -19,8 +19,10 @@
 </section>
 
 <section id="app" hidden>
-<p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
-<div class="mem"><div id="pie" class="pie" role="img" aria-label="Remplissage de la mémoire"></div><div id="leg" class="leg"></div></div>
+<div class="menu" role="navigation" aria-label="Menu"><button type="button" data-v="new">Nouveau texte</button><button type="button" data-v="list">Consultation des textes</button><a href="index.html" target="_blank" rel="noopener">Voir le site</a></div>
+<p class="msg smsg" id="msg" role="status"></p>
+<div id="v-new" hidden>
+<h1 id="ftitle">Nouveau texte</h1>
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <div class="row"><div><label for="cat">Catégorie</label>
  <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr</option></select></div>
@@ -29,8 +31,10 @@
 <label for="title">Titre</label><input id="title">
 <label>Texte</label><div id="edbox"></div><p class="cnt" id="cnt"></p>
 <p class="row" style="flex-wrap:wrap"><button id="pub" type="button">Publier</button><button id="draft" class="ghost" type="button">Enregistrer comme brouillon</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
-<p class="msg" id="msg" role="status"></p>
 
+</div>
+<div id="v-list" hidden>
+<div class="mem"><div id="pie" class="pie" role="img" aria-label="Remplissage de la mémoire"></div><div id="leg" class="leg"></div></div>
 <h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
 
 <h1 style="margin-top:3rem">Le lieu sûr</h1>
@@ -40,6 +44,9 @@
 <h1 style="margin-top:3rem">Sauvegarde</h1>
 <p class="lead">Télécharge vos textes déchiffrés dans un fichier à ranger en lieu sûr (il n’est pas protégé).</p>
 <p class="row" id="bk" style="flex-wrap:wrap"><button class="ghost" data-x="roman" type="button">Pour mes filles</button><button class="ghost" data-x="libre" type="button">Textes libres</button><button class="ghost" data-x="grivois" type="button">Le lieu sûr</button><button data-x="all" type="button">Tout exporter</button></p>
+
+</div>
+<p id="lock" hidden style="text-align:center;margin-top:3rem"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
 </section>
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>

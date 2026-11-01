@@ -31,6 +31,17 @@ $('#unlock').onclick=async()=>{
   $('#gate').hidden=true;$('#app').hidden=false;
  }catch(e){PW=null;m(bad(e))}};
 
+
+// Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
+function view(v){
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;
+ document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ if(v==='list')refresh();
+}
+$('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.v==='new'&&editId)reset();
+ msg('');view(b.dataset.v)};
+
 // GitHub : chaque fichier est chiffré avant l'envoi (site : mot de passe du site ; lieu sûr : son propre mot de passe)
 const api=(c,t)=>`https://api.github.com/repos/${c.o}/${t==='lieu'?c.r2:c.r}/contents/${t==='lieu'?'lieu.json':'content/texts.json'}`;
 const hd=c=>({Authorization:'Bearer '+c.t,Accept:'application/vnd.github+json'});
@@ -48,7 +59,7 @@ const meta=t=>{const n=t.n||(t.body!=null?cnt(t.body):null);return n?` · ${fr(n
 // Formulaire
 $('#date').value=today();
 $('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois'};
-function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';upd()}
+function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
@@ -99,7 +110,7 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.d){if(!confirm('Supprimer ce texte définitivement ?'))return;
   try{const{list,sha}=await load();await save(list.filter(x=>x.id!==b.dataset.d),sha,'Mise a jour du contenu');msg('Texte supprimé. Le site se met à jour dans une à deux minutes.');refresh()}catch(e){msg(bad(e))}}
  if(b.dataset.e){const t=cur.find(x=>x.id===b.dataset.e);editId=t.id;$('#cat').value=t.category;$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
 
 // Le lieu sûr (fichier séparé, son propre mot de passe)
 function renderLieu(){const vis=lcur.filter(t=>!(t.by==='invite'&&t.draft));$('#llist').innerHTML=vis.length?sortD(vis).map(t=>`<div class="item row"><div><b>${esc(t.title)}</b><span>${t.date||''}${t.by==='invite'?' · invité':''}${t.draft?' · <span class="badge">brouillon</span>':''}${meta(t)}</span></div><div style="flex:none"><button class="ghost" data-le="${t.id}">Modifier</button> <button class="ghost" data-ld="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>'}
@@ -109,7 +120,7 @@ $('#llist').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.ld){if(!confirm('Supprimer ce texte définitivement ?'))return;
   try{const{list,sha}=await load('lieu',LP);lcur=list.filter(x=>x.id!==b.dataset.ld);await save(lcur,sha,'Mise a jour','lieu',LP);renderLieu();msg('Texte supprimé.')}catch(e){msg(bad(e))}}
  if(b.dataset.le){const t=lcur.find(x=>x.id===b.dataset.le);editId=t.id;$('#cat').value='grivois';$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#pw').value=LP;upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#pw').value=LP;upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
 $('#mig').onclick=async()=>{
  const po=prompt('Ancien mot de passe de vos textes Privé :');if(!po)return;
  const pn=prompt('Mot de passe du lieu sûr (10 caractères minimum). Vous pouvez reprendre l’ancien s’il est assez long, ou en choisir un nouveau :');

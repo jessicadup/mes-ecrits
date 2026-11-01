@@ -17,14 +17,22 @@
 </section>
 
 <section id="app" hidden>
-<p style="text-align:right"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
+<div class="menu" role="navigation" aria-label="Menu"><button type="button" data-v="new">Nouveau texte</button><button type="button" data-v="list">Consultation des textes</button><a href="index.html" target="_blank" rel="noopener">Voir le site</a></div>
+<p class="msg smsg" id="msg" role="status"></p>
+<div id="v-new" hidden>
+<h1 id="ftitle">Nouveau texte</h1>
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
 <div><label for="date">Date</label><input id="date" type="date"></div>
 <label for="title">Titre</label><input id="title">
 <label>Texte</label><div id="edbox"></div><p class="cnt" id="cnt"></p>
 <p class="row" style="flex-wrap:wrap"><button id="pub" type="button">Publier</button><button id="draft" class="ghost" type="button">Enregistrer comme brouillon</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></p>
-<p class="msg" id="msg" role="status"></p>
+
+</div>
+<div id="v-list" hidden>
 <h1 style="margin-top:3rem">Mes textes</h1><div id="list"></div>
+
+</div>
+<p id="lock" hidden style="text-align:center;margin-top:3rem"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
 </section>
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>

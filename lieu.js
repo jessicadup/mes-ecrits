@@ -38,6 +38,17 @@ $('#unlock').onclick=async()=>{
   $('#gate').hidden=true;$('#app').hidden=false;
  }catch(e){PW=null;m(bad(e))}};
 
+
+// Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
+function view(v){
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;
+ document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ if(v==='list')refresh();
+}
+$('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.v==='new'&&editId)reset();
+ msg('');view(b.dataset.v)};
+
 // Il ne voit et ne modifie que les textes qu'il a lui-même écrits (by:'invite')
 const mine=l=>l.filter(x=>x.by==='invite').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 async function refresh(strict){
@@ -49,7 +60,7 @@ async function refresh(strict){
 $('#date').value=today();
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
-function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';upd()}
+function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
 
 $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let h='';
@@ -83,4 +94,4 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
  if(b.dataset.d){if(!confirm('Supprimer ce texte définitivement ?'))return;
   try{const{list,sha}=await load();await save(list.filter(x=>!(x.id===b.dataset.d&&x.by==='invite')),sha,'Mise a jour');msg('Texte supprimé.');refresh()}catch(e){msg(bad(e))}}
  if(b.dataset.e){const t=all.find(x=>x.id===b.dataset.e&&x.by==='invite');if(!t)return;
-  editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');scrollTo(0,0)}};
+  editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
