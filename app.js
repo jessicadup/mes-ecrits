@@ -24,7 +24,8 @@ function home(){
 function cat(c){
  if(c==='grivois'){
   const mine=sortD(lieu.filter(x=>x.by!=='invite')),his=sortD(lieu.filter(x=>x.by==='invite'));
-  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir"><section class="mine">'+(lieu.length?(mine.length?list(mine):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his">'+(his.length?list(his):'')+'</section></div>';return}
+  const cp=innerWidth<=900;
+  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?list(mine):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?list(his):'')+'</section></div>';return}
  main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+list(of(c));
 }
 
