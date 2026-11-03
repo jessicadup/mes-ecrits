@@ -52,3 +52,9 @@ Limites : l'invité peut lire tout ce qui est dans le lieu sûr (c'est une page 
 - Le texte mis en forme est filtré à l'affichage : seules les mises en forme ci-dessus sont acceptées.
 - Le lieu sûr : vos textes en haut à gauche (nœud de huit), ceux de l'invité en bas à droite (nœud de carrick). Une corde dorée en arc relie la femme encordée (mains libres, pieds liés) à l'homme debout qui la tient. Décor visible sur écran de plus de 900 px.
 - Fichiers à mettre à jour : tous ceux du zip, dont le nouveau `rich.js`.
+
+# Plein écran et barre d'outils fixe
+- Bouton « Plein écran » au-dessus de la zone de texte (page admin et page invité) : l'éditeur occupe tout l'écran, les outils restent en haut, « Quitter le plein écran » (ou Échap) et « Enregistrer comme brouillon » sont dans la barre. Le texte n'est jamais perdu en entrant ou sortant.
+- Les deux rubans d'outils restent collés en haut de l'écran quand on défile, sans recouvrir le texte. Sur téléphone, les 8 outils sont sur une seule ligne à faire glisser.
+- Menu « Taille » : Titre, Sous-titre, Texte normal, Petit, Grand, Très grand.
+- Les messages (« Publié »…) s'affichent en bulle en bas de l'écran.

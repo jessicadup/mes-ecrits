@@ -2,12 +2,12 @@ const $=s=>document.querySelector(s);
 const CATN={roman:'Pour mes filles',libre:'Textes libres',grivois:'Le lieu sûr'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fr=n=>n.toLocaleString('fr-FR');
-const msg=t=>{$('#msg').textContent=t};
+const msg=t=>{$('#msg').textContent=t;clearTimeout(window._mt);if(t)window._mt=setTimeout(()=>{$('#msg').textContent=''},9000);try{if(ED&&ED.isFull())ED.notify(t)}catch{}};
 const today=()=>new Date().toISOString().slice(0,10);
 const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let editId=null,cur=[],lcur=[],PW=null,TOK='',LP=null;
-const ED=initEditor($('#edbox'),'Écrivez ici…',true);
+const ED=initEditor($('#edbox'),'Écrivez ici…',{onDraft:async()=>{if(await send(true))ED.exitFull()}});
 
 const S=JSON.parse(localStorage.getItem('cfg')||'{}');
 const host=location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'';
@@ -95,7 +95,7 @@ async function send(draft){
    const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');refresh();
   }
-  reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
+  reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=()=>send(false);
 $('#draft').onclick=()=>send(true);
