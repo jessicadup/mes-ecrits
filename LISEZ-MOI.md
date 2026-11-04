@@ -58,3 +58,10 @@ Limites : l'invité peut lire tout ce qui est dans le lieu sûr (c'est une page 
 - Les deux rubans d'outils restent collés en haut de l'écran quand on défile, sans recouvrir le texte. Sur téléphone, les 8 outils sont sur une seule ligne à faire glisser.
 - Menu « Taille » : Titre, Sous-titre, Texte normal, Petit, Grand, Très grand.
 - Les messages (« Publié »…) s'affichent en bulle en bas de l'écran.
+
+# Catégories et chapitres (étape 2)
+- Le champ « Catégorie » de l'ancienne version s'appelle maintenant « Rubrique » (Pour mes filles, Textes libres, Le lieu sûr). Le nouveau champ « Catégorie » sert aux romans, recueils et séries : « Sans catégorie », vos catégories, ou « + Nouvelle catégorie… ».
+- Dans « Consultation des textes » : créer une catégorie (« + Nouvelle catégorie »), la renommer, la supprimer (ses textes passent dans « Sans catégorie »), la monter ou la descendre avec ↑ ↓, et régler l'ordre des chapitres avec ↑ ↓ (par défaut : dans l'ordre d'ajout).
+- Sur le site : chaque rubrique est groupée par catégorie ; la page de lecture affiche « Catégorie · 2 / 7 » et les boutons « Chapitre précédent » / « Chapitre suivant ».
+- Le lieu sûr : vos catégories s'affichent à gauche, celles de l'invité à droite ; chacun gère les siennes.
+- Nouveau fichier à déposer : `cats.js`.
