@@ -43,9 +43,9 @@ function confirmBox(text,yes){return new Promise(res=>{
 
 // Styles propres à l'éditeur : injectés ici pour ne pas dépendre de la version de style.css
 (function(){if(document.getElementById('rich-css'))return;const st=document.createElement('style');st.id='rich-css';st.textContent=`
-#title,.ed{box-sizing:border-box;width:100%;background:#fff;border:1px solid #aeb8ad;border-radius:6px;padding:.7rem .85rem;color:var(--ink,#3a3f46);font:inherit;font-size:1.05rem}
+#title,#catg,.ed{box-sizing:border-box;width:100%;background:#fff;border:1px solid #aeb8ad;border-radius:6px;padding:.7rem .85rem;color:var(--ink,#3a3f46);font:inherit;font-size:1.05rem}
 .ed{min-height:18rem;font:1.15rem/1.65 var(--serif,Georgia,serif);overflow-wrap:anywhere}
-@media(prefers-color-scheme:dark){#title,.ed{background:#2b3236;border-color:#5a646b}}
+@media(prefers-color-scheme:dark){#title,#catg,.ed{background:#2b3236;border-color:#5a646b}}
 .ed:empty:before{content:attr(data-ph);color:#8a929a}
 .ed p{margin:0 0 .9em}.ed ul,.ed ol{margin:0 0 .9em 1.4em;padding:0}
 .ed h2,.text h2{font-size:1.55em;font-weight:500;line-height:1.25;margin:.9em 0 .4em}.ed h3,.text h3{font-size:1.28em;font-weight:500;line-height:1.3;margin:.8em 0 .35em}

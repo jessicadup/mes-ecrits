@@ -53,14 +53,23 @@ $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
 const mine=l=>l.filter(x=>x.by==='invite').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 async function refresh(strict){
  try{const{list}=await load();all=list;
-  const m=mine(list);
-  $('#list').innerHTML=m.length?m.map(t=>`<div class="item row"><div><b>${esc(t.title)}</b><span>${t.date||''}${t.draft?' · <span class="badge">brouillon</span>':''}${t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:''}</span></div><div style="flex:none"><button class="ghost" data-e="${t.id}">Modifier</button> <button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
+  const mt=textsOf(list).filter(x=>x.by==='invite'),mc=catsOf(list,'grivois','invite');
+  $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle catégorie</button></p>'+treeHtml({texts:mt,cats:mc,meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
+  fillCats();
  }catch(e){if(strict)throw e;msg(bad(e))}}
+
+// Catégories : liste déroulante du formulaire (ses propres catégories seulement)
+function fillCats(){const s=$('#catg');if(!s)return;const keep=s.value,src=catsOf(all,'grivois','invite');
+ s.innerHTML='<option value="">Sans catégorie</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle catégorie…</option>';
+ s.value=[...s.options].some(o=>o.value===keep)?keep:''}
+$('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
+ const name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim()){s.value='';return}
+ try{const{list,sha}=await load(),c=addCat(list,'grivois',name,'invite');await save(list,sha,'Mise a jour');all=list;fillCats();s.value=c.id}catch(e){s.value='';msg(bad(e))}};
 
 $('#date').value=today();
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
-function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
+function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
 
 $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let h='';
@@ -76,7 +85,7 @@ $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f
  upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
 async function send(draft){
- const title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
+ const cg=$('#catg').value==='__new'?'':$('#catg').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
  if(!text)return msg('Il manque le texte.');
  if(!title)return msg('Il manque le titre.');
  const was=all.find(x=>x.id===id&&x.by==='invite');
