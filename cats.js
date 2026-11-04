@@ -21,12 +21,13 @@ function moveCat(list,id,dir){const c=list.find(x=>x.id===id&&isCat(x));if(!c)re
 function moveText(list,id,dir){const t=list.find(x=>x.id===id&&!isCat(x));if(!t||!t.cat)return;
  const sib=siblings(t,list),i=sib.indexOf(t),j=i+dir;if(j<0||j>=sib.length)return;
  [sib[i],sib[j]]=[sib[j],sib[i]];sib.forEach((x,k)=>x.ord=k+1)}
-// place un texte dans une catégorie (à la fin si nouvelle ou changée), sans toucher à l'ordre des autres
+// place un texte dans une catégorie : à la fin s'il est nouveau ou change de catégorie, sinon il garde sa place
 function placeText(list,e){
  if(!e.cat){delete e.cat;delete e.ord;return}
- const prev=list.find(x=>x.id===e.id&&!isCat(x)),same=prev&&prev.cat===e.cat&&prev.ord!=null;
- const grp=list.filter(x=>!isCat(x)&&x.id!==e.id&&x.cat===e.cat&&ownerOf(x)===ownerOf(e)&&x.category===e.category);
- e.ord=same?prev.ord:1e9;[...grp,e].sort(byOrder).forEach((x,k)=>x.ord=k+1)}
+ const inGrp=x=>!isCat(x)&&x.cat===e.cat&&ownerOf(x)===ownerOf(e)&&x.category===e.category;
+ const prev=list.find(x=>x.id===e.id&&!isCat(x));
+ if(prev&&prev.cat===e.cat){const all=list.filter(inGrp).sort(byOrder),p=all.findIndex(x=>x.id===e.id);if(p>=0)all[p]=e;all.forEach((x,k)=>x.ord=k+1)}
+ else{const all=list.filter(x=>inGrp(x)&&x.id!==e.id).sort(byOrder);all.forEach((x,k)=>x.ord=k+1);e.ord=all.length+1}}
 
 // --- arborescence pour les pages d'édition (consultation) ---
 (function(){if(document.getElementById('cats-css'))return;const s=document.createElement('style');s.id='cats-css';s.textContent=`

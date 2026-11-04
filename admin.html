@@ -2,7 +2,7 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="referrer" content="no-referrer"><title>Accès</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103a"><style>
+<link rel="stylesheet" href="style.css?v=20261104a"><style>
 .menu{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin:2rem 0 1rem;padding-bottom:1.4rem;border-bottom:1px solid var(--line)}
 .menu button,.menu a,.menu a:visited{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:12rem;height:2.9rem;padding:0 1.3rem;margin:0;font:inherit;font-size:.95rem;line-height:1;background:none;color:var(--ink);border:1px solid var(--line);border-radius:6px;cursor:pointer;text-decoration:none;-webkit-appearance:none;appearance:none}
 .menu button:hover,.menu a:hover{border-color:var(--accent);background:none}
@@ -31,10 +31,11 @@
 <div id="v-new" hidden>
 <h1 id="ftitle">Nouveau texte</h1>
 <label for="file">Importer un fichier Word (.docx), PDF ou texte (facultatif)</label><input id="file" type="file" accept=".docx,.doc,.pdf,.txt,.md">
-<div class="row"><div><label for="cat">Catégorie</label>
+<div class="row"><div><label for="cat">Rubrique</label>
  <select id="cat"><option value="roman">Pour mes filles</option><option value="libre">Textes libres</option><option value="grivois">Le lieu sûr</option></select></div>
  <div><label for="date">Date</label><input id="date" type="date"></div></div>
 <div id="pwrow" hidden><label for="pw">Mot de passe du lieu sûr (10 caractères minimum, le même pour tous ses textes et pour votre invité)</label><input id="pw" type="password" autocomplete="new-password"><label class="show"><input type="checkbox" id="sp2"> Afficher</label></div>
+<div id="catrow"><label for="catg">Catégorie (roman, recueil, série…)</label><select id="catg"><option value="">Sans catégorie</option></select></div>
 <label for="title">Titre</label><input id="title">
 <label>Texte</label><div id="edbox"></div><p class="cnt" id="cnt"></p>
 <div class="acts"><button id="pub" type="button">Publier</button><button id="draft" class="ghost" type="button">Enregistrer comme brouillon</button><button id="cancel" class="ghost" type="button">Vider le formulaire</button></div>
@@ -58,5 +59,5 @@
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=20261103a"></script><script src="rich.js?v=20261103a"></script><script src="crypto.js?v=20261103a"></script><script src="admin.js?v=20261103a"></script>
+<script src="config.js?v=20261104a"></script><script src="cats.js?v=20261104a"></script><script src="rich.js?v=20261104a"></script><script src="crypto.js?v=20261104a"></script><script src="admin.js?v=20261104a"></script>
 </body></html>

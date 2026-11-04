@@ -58,8 +58,8 @@ const meta=t=>{const n=t.n||(t.body!=null?cnt(t.body):null);return n?` · ${fr(n
 
 // Formulaire
 $('#date').value=today();
-$('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois'};
-function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
+$('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois';fillCats()};
+function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
 $('#cancel').onclick=()=>{reset();msg('')};
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
@@ -77,7 +77,7 @@ $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f
  upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
 async function send(draft){
- const cat=$('#cat').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
+ const cg=$('#catg').value==='__new'?'':$('#catg').value,cat=$('#cat').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
  if(!text)return msg('Il manque le texte.');
  if(!title)return msg('Il manque le titre.');
  const was=(cat==='grivois'?lcur:cur).find(x=>x.id===id);
@@ -88,11 +88,11 @@ async function send(draft){
   if(cat==='grivois'){
    const p=$('#pw').value||LP||'';if(p.length<10)return msg('Mot de passe du lieu sûr : 10 caractères minimum.');
    msg('Enregistrement en cours…');
-   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};
+   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};if(cg)e.cat=cg;placeText(list,e);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour','lieu',p);LP=p;lcur=list;renderLieu();
   }else{
    msg('Enregistrement en cours…');
-   const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);
+   const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);if(cg)e.cat=cg;placeText(list,e);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');refresh();
   }
   reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');return true;
@@ -104,23 +104,61 @@ $('#draft').onclick=()=>send(true);
 async function refresh(strict){
  try{const{list,size}=await load();cur=list;pie(list,size);
   $('#mig').hidden=!list.some(t=>t.category==='grivois');
-  $('#list').innerHTML=list.length?sortD(list).map(t=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':esc(t.title)}</b><span>${CATN[t.category]} · ${t.date||''}${t.draft?' · <span class="badge">brouillon</span>':''}${meta(t)}</span></div><div style="flex:none">${t.enc?'':`<button class="ghost" data-e="${t.id}">Modifier</button> `}<button class="ghost" data-d="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>';
+  renderMain(list);
  }catch(e){if(strict)throw e;msg(bad(e))}}
-$('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
- if(b.dataset.d){if(!confirm('Supprimer ce texte définitivement ?'))return;
-  try{const{list,sha}=await load();await save(list.filter(x=>x.id!==b.dataset.d),sha,'Mise a jour du contenu');msg('Texte supprimé. Le site se met à jour dans une à deux minutes.');refresh()}catch(e){msg(bad(e))}}
- if(b.dataset.e){const t=cur.find(x=>x.id===b.dataset.e);editId=t.id;$('#cat').value=t.category;$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
+$('#list').onclick=ev=>treeAction(ev,'main');
+
+function renderMain(list){const tx=textsOf(list),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);let h='';
+ for(const sec of ['roman','libre'])h+=`<h2 class="rh">${CATN[sec]}</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="${sec}">+ Nouvelle catégorie</button></p>`+treeHtml({texts:tx.filter(t=>t.category===sec),cats:catsOf(list,sec),meta:m});
+ const old=tx.filter(t=>t.category==='grivois');if(old.length)h+='<h2 class="rh">Anciens textes Privé</h2>'+treeHtml({texts:old,cats:[],meta:m});
+ $('#list').innerHTML=h;fillCats()}
+
+// Catégories : liste déroulante du formulaire
+function fillCats(){const s=$('#catg');if(!s)return;const sec=$('#cat').value,keep=s.value;
+ const src=sec==='grivois'?catsOf(lcur,'grivois','moi'):catsOf(cur,sec);
+ s.innerHTML='<option value="">Sans catégorie</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle catégorie…</option>';
+ s.value=[...s.options].some(o=>o.value===keep)?keep:''}
+$('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
+ const sec=$('#cat').value,lieuS=sec==='grivois',pw=lieuS?($('#pw').value||LP):PW;
+ const name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim()){s.value='';return}
+ if(lieuS&&(!pw||pw.length<10)){s.value='';return msg('Saisissez d’abord le mot de passe du lieu sûr (10 caractères minimum).')}
+ try{const store=lieuS?'lieu':'main',{list,sha}=await load(store,pw),c=addCat(list,sec,name);await save(list,sha,'Mise a jour',store,pw);
+  if(lieuS){LP=pw;lcur=list;renderLieu()}else{cur=list;await refresh()}
+  fillCats();s.value=c.id}catch(e){s.value='';msg(bad(e))}};
+$('#pw').onchange=async()=>{const p=$('#pw').value;if(p.length<10||$('#cat').value!=='grivois')return;try{const{list}=await load('lieu',p);LP=p;lcur=list;fillCats()}catch{}};
+
+// Actions de la consultation (textes et catégories), pour le site principal ('main') et le lieu sûr ('lieu')
+async function treeAction(ev,store){
+ const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
+ const a=b.dataset.a,id=b.dataset.id,L=store==='lieu',pw=L?LP:PW,src=()=>L?lcur:cur;
+ const after=async list=>{if(L){lcur=list;renderLieu()}else await refresh()};
+ try{
+  if(a==='edit'){const t=src().find(x=>x.id===id);if(!t)return;
+   editId=t.id;$('#cat').value=L?'grivois':t.category;$('#cat').onchange();$('#date').value=t.date||today();
+   $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));if(L)$('#pw').value=LP;$('#catg').value=t.cat||'';
+   upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
+  let text=null,name=null;
+  if(a==='del'){if(!confirm('Supprimer ce texte définitivement ?'))return;text='Texte supprimé.'}
+  else if(a==='cnew'){name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim())return;text='Catégorie créée.'}
+  else if(a==='cren'){const c=src().find(x=>x.id===id);name=prompt('Nouveau nom de la catégorie :',c?c.name:'');if(!name||!name.trim())return;text='Catégorie renommée.'}
+  else if(a==='cdel'){const c=src().find(x=>x.id===id);if(!confirm(`Supprimer la catégorie « ${c?c.name:''} » ? Ses textes passeront dans « Sans catégorie ».`))return;text='Catégorie supprimée.'}
+  const{list,sha}=await load(store,pw);let nl=list;
+  if(a==='del')nl=list.filter(x=>x.id!==id);
+  else if(a==='cnew')addCat(list,b.dataset.sec,name,b.dataset.by);
+  else if(a==='cren')renameCat(list,id,name);
+  else if(a==='cdel')removeCat(list,id);
+  else if(a==='cup'||a==='cdown')moveCat(list,id,a==='cup'?-1:1);
+  else if(a==='tup'||a==='tdown')moveText(list,id,a==='tup'?-1:1);
+  await save(nl,sha,'Mise a jour',store,pw);if(text)msg(text);await after(nl);
+ }catch(e){msg(bad(e))}}
 
 // Le lieu sûr (fichier séparé, son propre mot de passe)
-function renderLieu(){const vis=lcur.filter(t=>!(t.by==='invite'&&t.draft));$('#llist').innerHTML=vis.length?sortD(vis).map(t=>`<div class="item row"><div><b>${esc(t.title)}</b><span>${t.date||''}${t.by==='invite'?' · invité':''}${t.draft?' · <span class="badge">brouillon</span>':''}${meta(t)}</span></div><div style="flex:none"><button class="ghost" data-le="${t.id}">Modifier</button> <button class="ghost" data-ld="${t.id}">Supprimer</button></div></div>`).join(''):'<p class="empty">Aucun texte pour l’instant.</p>'}
+function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
+ const btn=by=>`<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="${by}">+ Nouvelle catégorie</button></p>`;
+ $('#llist').innerHTML='<h2 class="rh">Mes textes</h2>'+btn('moi')+treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m})+'<h2 class="rh">Textes de l’invité</h2>'+btn('invite')+treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m});fillCats()}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
-$('#llist').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
- if(b.dataset.ld){if(!confirm('Supprimer ce texte définitivement ?'))return;
-  try{const{list,sha}=await load('lieu',LP);lcur=list.filter(x=>x.id!==b.dataset.ld);await save(lcur,sha,'Mise a jour','lieu',LP);renderLieu();msg('Texte supprimé.')}catch(e){msg(bad(e))}}
- if(b.dataset.le){const t=lcur.find(x=>x.id===b.dataset.le);editId=t.id;$('#cat').value='grivois';$('#cat').onchange();$('#date').value=t.date||today();
-  $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#pw').value=LP;upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
+$('#llist').onclick=ev=>treeAction(ev,'lieu');
 $('#mig').onclick=async()=>{
  const po=prompt('Ancien mot de passe de vos textes Privé :');if(!po)return;
  const pn=prompt('Mot de passe du lieu sûr (10 caractères minimum). Vous pouvez reprendre l’ancien s’il est assez long, ou en choisir un nouveau :');
@@ -148,9 +186,9 @@ function pie(list,size){
   +(size>LIMIT*.7?'<br>⚠ Bientôt plein : il faudra passer à un fichier par texte.':'')}
 $('#bk').onclick=ev=>{const b=ev.target.closest('button');if(b)exportCat(b.dataset.x)};
 async function exportCat(x){
- let items=cur.filter(t=>(x==='all'||t.category===x)&&t.category!=='grivois');
+ let items=cur.filter(t=>!isCat(t)&&(x==='all'||t.category===x)&&t.category!=='grivois');
  if(x==='grivois'||x==='all'){const p=prompt('Mot de passe du lieu sûr (laisser vide pour ignorer le lieu sûr) :');
-  if(p){try{const L=await load('lieu',p);items=items.concat(L.list.map(t=>({...t,category:'grivois'})))}catch(e){return msg(bad(e))}}}
+  if(p){try{const L=await load('lieu',p);items=items.concat(L.list.filter(t=>!isCat(t)).map(t=>({...t,category:'grivois'})))}catch(e){return msg(bad(e))}}}
  items.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
  if(!items.length)return msg('Rien à exporter.');
  const out=items.map(t=>`${CATN[t.category]} — ${t.title}\n${t.date||''}\n\n${t.body}`);
