@@ -15,12 +15,37 @@ const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
 const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${knot(t)}${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
 
-const grp=n=>`<h2 class="grp" style="font:500 1.1rem var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin:2rem 0 .1rem">${esc(n)}</h2>`;
-function grouped(items,cats,rule){
- const{g,rest}=groupTexts(items,cats),shown=g.filter(x=>x.items.length);let h='';
- shown.forEach(x=>{h+=grp(x.cat.name)+list(x.items)});
- if(rest.length)h+=(shown.length?grp('Sans catégorie'):'')+list([...rest].sort(rule));
+// Accordéon des catégories : seuls les noms s'affichent, un clic déplie la liste des textes (styles intégrés ici)
+(function(){if(document.getElementById('acc-css'))return;const s=document.createElement('style');s.id='acc-css';s.textContent=`
+.acc{border:1px solid var(--line,#dde2dc);border-radius:8px;margin:0 0 .8rem;overflow:hidden}
+.acc-h{display:flex;align-items:center;gap:.8rem;width:100%;box-sizing:border-box;margin:0;padding:1rem 1.1rem;background:none;border:0;border-radius:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.acc-h:hover{background:rgba(122,106,128,.08)}
+.acc-n{font:500 1.45rem/1.2 var(--serif,Georgia,serif)}
+.acc-c{font-size:.85rem;color:var(--soft,#6f7780)}
+.acc-h .arr{order:-1;flex:none;width:.55rem;height:.55rem;border-right:2px solid var(--accent,#7a6a80);border-bottom:2px solid var(--accent,#7a6a80);transform:rotate(-45deg);transition:transform .3s ease}
+.acc-h[aria-expanded=true] .arr{transform:rotate(45deg)}
+.acc-r .acc-h{justify-content:flex-end;text-align:right}
+.acc-r .acc-h .arr{order:1;transform:rotate(135deg)}
+.acc-r .acc-h[aria-expanded=true] .arr{transform:rotate(45deg)}
+.acc-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.acc-b.open{grid-template-rows:1fr}
+.acc-i{min-height:0;overflow:hidden;padding:0 1.1rem;visibility:hidden;transition:visibility 0s .35s}
+.acc-b.open .acc-i{visibility:visible;transition:visibility 0s}
+@media(prefers-reduced-motion:reduce){.acc-b,.acc-h .arr{transition:none}.acc-i{transition:none}}
+`;document.head.appendChild(s)})();
+const openSet=new Set();
+function acc(key,name,count,inner){const o=openSet.has(key);
+ return `<div class="acc${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${esc(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span><span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
+function grouped(items,cats,rule,scope){
+ const{g,rest}=groupTexts(items,cats),shown=g.filter(x=>x.items.length);
+ if(!shown.length)return list([...rest].sort(rule));
+ let h='';
+ shown.forEach(x=>{h+=acc(scope+':'+x.cat.id,x.cat.name,x.items.length,list(x.items))});
+ if(rest.length)h+=acc(scope+':none','Sans catégorie',rest.length,list([...rest].sort(rule)));
  return h}
+main.addEventListener('click',e=>{const h=e.target.closest('.acc-h');if(!h)return;
+ const box=h.parentElement,b=box.querySelector('.acc-b'),o=!b.classList.contains('open');
+ b.classList.toggle('open',o);h.setAttribute('aria-expanded',String(o));o?openSet.add(box.dataset.k):openSet.delete(box.dataset.k)});
 
 function home(){
  main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).filter(([k])=>k!=='grivois').map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
@@ -32,8 +57,8 @@ function cat(c){
  if(c==='grivois'){
   const mine=sortD(lieu.filter(x=>x.by!=='invite')),his=sortD(lieu.filter(x=>x.by==='invite'));
   const cp=innerWidth<=900;
-  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),(a,b)=>(b.date||'').localeCompare(a.date||'')):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),(a,b)=>(b.date||'').localeCompare(a.date||'')):'')+'</section></div>';return}
- main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+(of(c).length?grouped(of(c),catsOf(mcats,c),(a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1)):'<p class="empty">Rien ici pour l’instant.</p>');
+  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),(a,b)=>(b.date||'').localeCompare(a.date||''),'lieu-moi'):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),(a,b)=>(b.date||'').localeCompare(a.date||''),'lieu-invite'):'')+'</section></div>';return}
+ main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+(of(c).length?grouped(of(c),catsOf(mcats,c),(a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1),c):'<p class="empty">Rien ici pour l’instant.</p>');
 }
 
 function show(id){

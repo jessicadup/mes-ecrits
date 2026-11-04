@@ -65,3 +65,6 @@ Limites : l'invité peut lire tout ce qui est dans le lieu sûr (c'est une page 
 - Sur le site : chaque rubrique est groupée par catégorie ; la page de lecture affiche « Catégorie · 2 / 7 » et les boutons « Chapitre précédent » / « Chapitre suivant ».
 - Le lieu sûr : vos catégories s'affichent à gauche, celles de l'invité à droite ; chacun gère les siennes.
 - Nouveau fichier à déposer : `cats.js`.
+
+# Catégories repliées sur le site
+Sur le site, seuls les noms des catégories sont affichés (avec le nombre de textes et une flèche). Un clic déplie la liste des textes avec une petite animation, un second clic la referme. Une catégorie reste dépliée quand on revient d'un texte. Les textes sans catégorie, s'il n'y a aucune catégorie, s'affichent directement.
