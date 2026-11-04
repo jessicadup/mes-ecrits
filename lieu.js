@@ -92,15 +92,30 @@ async function send(draft){
  if(draft&&was&&!was.draft&&!await confirmBox('Ce texte est en ligne. Le retirer du site et le garder en brouillon ?','Retirer du site'))return;
  if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » ?`))return;
  try{msg('Enregistrement en cours…');
-  const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;
-  const i=list.findIndex(x=>x.id===id&&x.by==='invite');i>=0?list[i]=e:list.push(e);
+  const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;
+  const i=list.findIndex(x=>x.id===id&&x.by==='invite');placeText(list,e);i>=0?list[i]=e:list.push(e);
   await save(list,sha,'Mise a jour');reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=()=>send(false);
 $('#draft').onclick=()=>send(true);
 
-$('#list').onclick=async ev=>{const b=ev.target.closest('button');if(!b)return;
- if(b.dataset.d){if(!confirm('Supprimer ce texte définitivement ?'))return;
-  try{const{list,sha}=await load();await save(list.filter(x=>!(x.id===b.dataset.d&&x.by==='invite')),sha,'Mise a jour');msg('Texte supprimé.');refresh()}catch(e){msg(bad(e))}}
- if(b.dataset.e){const t=all.find(x=>x.id===b.dataset.e&&x.by==='invite');if(!t)return;
-  editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0)}};
+$('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
+ const a=b.dataset.a,id=b.dataset.id,own=x=>!!x&&ownerOf(x)==='invite';
+ try{
+  if(a==='edit'){const t=all.find(x=>x.id===id&&x.by==='invite');if(!t)return;
+   editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';
+   upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
+  let text=null,name=null;
+  if(a==='del'){if(!confirm('Supprimer ce texte définitivement ?'))return;text='Texte supprimé.'}
+  else if(a==='cnew'){name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim())return;text='Catégorie créée.'}
+  else if(a==='cren'){const c=all.find(x=>x.id===id);name=prompt('Nouveau nom de la catégorie :',c?c.name:'');if(!name||!name.trim())return;text='Catégorie renommée.'}
+  else if(a==='cdel'){const c=all.find(x=>x.id===id);if(!confirm(`Supprimer la catégorie « ${c?c.name:''} » ? Ses textes passeront dans « Sans catégorie ».`))return;text='Catégorie supprimée.'}
+  const{list,sha}=await load();let nl=list;const tg=list.find(x=>x.id===id);
+  if(a==='del')nl=list.filter(x=>!(x.id===id&&x.by==='invite'));
+  else if(a==='cnew')addCat(list,'grivois',name,'invite');
+  else if(a==='cren'&&own(tg))renameCat(list,id,name);
+  else if(a==='cdel'&&own(tg))removeCat(list,id);
+  else if((a==='cup'||a==='cdown')&&own(tg))moveCat(list,id,a==='cup'?-1:1);
+  else if((a==='tup'||a==='tdown')&&own(tg))moveText(list,id,a==='tup'?-1:1);
+  await save(nl,sha,'Mise a jour');if(text)msg(text);refresh();
+ }catch(e){msg(bad(e))}};
