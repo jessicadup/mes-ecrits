@@ -68,3 +68,10 @@ Limites : l'invité peut lire tout ce qui est dans le lieu sûr (c'est une page 
 
 # Catégories repliées sur le site
 Sur le site, seuls les noms des catégories sont affichés (avec le nombre de textes et une flèche). Un clic déplie la liste des textes avec une petite animation, un second clic la referme. Une catégorie reste dépliée quand on revient d'un texte. Les textes sans catégorie, s'il n'y a aucune catégorie, s'affichent directement.
+
+# Nouvelle organisation (rubriques, lecture, interligne)
+- « Mots après maux » : les rubriques (anciennes catégories) sont directement sur l'accueil, en accordéon : une seule ouverte à la fois, un second clic la referme. « Pour mes filles » est devenue « Roman - Témoignage », « Textes libres » a disparu, « challenge » est une rubrique à part entière. « Sans rubrique » n'apparaît que si des textes y sont. Le menu du haut est supprimé, la recherche reste.
+- Admin : choisir la **Page** (Mots après maux ou Le lieu sûr) puis la **Rubrique** (existante ou « + Nouvelle rubrique… »). Dans « Consultation des textes » : ajouter, renommer, réordonner (↑ ↓) les rubriques ; supprimer une rubrique propose de déplacer ses textes dans une autre rubrique, une nouvelle, ou « Sans rubrique ». Les chapitres se réordonnent avec ↑ ↓ (par défaut du plus ancien au plus récent, selon la date saisie).
+- Troisième ruban fixe : interligne (Simple, 1,5, Double ou curseur, enregistré avec le texte), puis « Enregistrer comme brouillon », « Publier » et « Supprimer » (texte ouvert : suppression définitive ; nouveau texte : vide le formulaire). Les boutons du bas de page n'existent plus.
+- Le bouton « Voir le lieu » (pages admin et invité) ouvre `index.html#/lieu` : seul le mot de passe du lieu est demandé.
+- Les anciennes données sont converties automatiquement à la première lecture ; la conversion est enregistrée à la première modification faite depuis la page admin.

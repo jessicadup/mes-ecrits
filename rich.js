@@ -79,6 +79,15 @@ body.ed-lock{overflow:hidden}
 @media(prefers-color-scheme:dark){.dlg{background:rgba(31,35,38,.8)}}
 .dlg>div{width:min(26rem,90vw);padding:1.6rem;background:var(--card,#fff);border:1px solid var(--line,#dde2dc);border-radius:10px;text-align:center;color:var(--ink,#3a3f46)}
 @media(max-width:700px){.ribs{display:flex;gap:.4rem;overflow-x:auto;padding:.4rem 0 .3rem;-webkit-overflow-scrolling:touch}.ribs .rib{display:contents}.ribs .rib>*{flex:0 0 auto;width:auto;min-width:6.4rem}.ribs .rib select{min-width:6.8rem}.acts{grid-template-columns:1fr}.edwrap.fb,.edwrap:fullscreen{padding:.6rem .7rem 1rem}}
+
+.rib3{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr)}
+.lhr{display:flex;align-items:center;gap:.5rem;box-sizing:border-box;height:2.6rem;margin:0;padding:0 .6rem;border:1px solid #aeb8ad;border-radius:6px;background:#fff;font-size:.85rem;color:var(--ink,#3a3f46)}
+@media(prefers-color-scheme:dark){.lhr{background:#2b3236;border-color:#5a646b}}
+.lhr input{flex:1;min-width:0;width:auto;height:auto;padding:0;margin:0;border:0;background:none;accent-color:var(--accent,#7a6a80)}
+.lhr output{min-width:2rem;text-align:right}
+.rib button.primary{background:var(--accent,#7a6a80);color:var(--on,#fff);border-color:var(--accent,#7a6a80)}
+.rib button.b-d{line-height:1.1;font-size:.82rem;white-space:normal}
+@media(max-width:700px){.rib3{display:flex;gap:.4rem;overflow-x:auto;padding:.1rem 0 .3rem;margin-top:.4rem;-webkit-overflow-scrolling:touch}.rib3>*{flex:0 0 auto;width:auto;min-width:6.4rem}.rib3 .b-d{order:1;min-width:8.5rem}.rib3 #pub{order:2}.rib3 .b-x{order:3}.rib3 select{order:4}.rib3 .lhr{order:5;min-width:11rem}}
 `;document.head.appendChild(st)})();
 
 function initEditor(box,ph,opts){
@@ -87,10 +96,11 @@ function initEditor(box,ph,opts){
  const size=`<select data-c="size" aria-label="Taille du texte"><option value="">Taille</option>${opt([['h2','Titre'],['h3','Sous-titre'],['p','Texte normal'],['.85','Petit'],['1.4','Grand'],['1.9','Très grand']])}</select>`;
  const font=`<select data-c="font" aria-label="Police"><option value="">Police</option>${opt(Object.keys(FONTS).map(k=>[k,k]),v=>'font-family:'+FONTS[v])}</select>`;
  const color=`<select data-c="color" aria-label="Couleur du texte"><option value="">Couleur</option>${opt([['#c9a24a','Doré'],['#d58a97','Rose'],['#7fae88','Vert sauge'],['#6c9bd1','Bleu ciel'],['#a08ab0','Violet'],['#e0806a','Corail'],['#8d949e','Gris']],v=>'color:'+v)}</select>`;
+ const rib3=opts.actions?`<div class="rib rib3" role="toolbar" aria-label="Interligne et actions"><select data-l="sel" aria-label="Interligne"><option value="">Interligne</option><option value="1.15">Simple</option><option value="1.5">1,5</option><option value="2">Double</option><option value="x" hidden>Personnalisé</option></select><label class="lhr"><input type="range" data-l="rng" min="1" max="3" step="0.1" value="1.7" aria-label="Interligne (curseur)"><output data-l="out">—</output></label><button type="button" id="draft" class="b-d" aria-label="Enregistrer comme brouillon">Enregistrer comme brouillon</button><button type="button" id="pub" class="primary">Publier</button><button type="button" id="del" class="b-x">Supprimer</button></div>`:'';
  const list=`<select data-c="list" aria-label="Liste"><option value="">Liste</option>${opt([['ul','Liste à puces'],['ol','Liste numérotée'],['none','Aucune liste']])}</select>`;
  box.innerHTML=`<div class="edwrap"><div class="stick"><div class="ribs"><div class="rib" role="toolbar" aria-label="Taille, police, couleur, liste">${size}${font}${color}${list}</div>
- <div class="rib" role="toolbar" aria-label="Style du texte"><button type="button" data-t="bold" aria-pressed="false"><b>Gras</b></button><button type="button" data-t="italic" aria-pressed="false"><i>Italique</i></button><button type="button" data-t="underline" aria-pressed="false"><u>Souligné</u></button><button type="button" data-t="hl" aria-pressed="false"><span style="background:rgba(255,224,102,.65);padding:0 .3em">Surligné</span></button></div></div>
- <div class="edhead"><button type="button" class="linkbtn" data-b="removeFormat">Effacer la mise en forme</button><span class="edbtns"><button type="button" class="fsbtn fsdraft" data-f="draft">Enregistrer comme brouillon</button><button type="button" class="fsbtn" data-f="full" aria-pressed="false">Plein écran</button></span></div></div>
+ <div class="rib" role="toolbar" aria-label="Style du texte"><button type="button" data-t="bold" aria-pressed="false"><b>Gras</b></button><button type="button" data-t="italic" aria-pressed="false"><i>Italique</i></button><button type="button" data-t="underline" aria-pressed="false"><u>Souligné</u></button><button type="button" data-t="hl" aria-pressed="false"><span style="background:rgba(255,224,102,.65);padding:0 .3em">Surligné</span></button></div></div>${rib3}
+ <div class="edhead"><button type="button" class="linkbtn" data-b="removeFormat">Effacer la mise en forme</button><span class="edbtns"><button type="button" class="fsbtn" data-f="full" aria-pressed="false">Plein écran</button></span></div></div>
  <p class="edmsg" role="status"></p>
  <div class="ed" contenteditable="true" role="textbox" aria-multiline="true" data-ph="${ph||''}"></div>
  <p class="cnt hint">Sélectionnez un mot ou un passage, puis utilisez les menus et les boutons ci-dessus.</p></div>`;
@@ -140,11 +150,19 @@ function initEditor(box,ph,opts){
   if(fsEl()===wrap){try{const p=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(p&&p.catch)p.catch(()=>{})}catch{}}
   setUI(false)};
  fsb.onmousedown=e=>e.preventDefault();fsb.onclick=()=>isFull()?exit():enter();
- const db=box.querySelector('[data-f=draft]');db.onmousedown=e=>e.preventDefault();db.onclick=()=>{if(opts.onDraft)opts.onDraft()};
- const onFs=()=>{if(!fsEl()&&isFull()&&!wrap.classList.contains('fb'))setUI(false)};
+  const onFs=()=>{if(!fsEl()&&isFull()&&!wrap.classList.contains('fb'))setUI(false)};
  document.addEventListener('fullscreenchange',onFs);document.addEventListener('webkitfullscreenchange',onFs);
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&wrap.classList.contains('fb'))exit()});
 
- return{el:ed,html:()=>sanitize(ed.innerHTML),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h)},clear:()=>{ed.innerHTML=''},onInput:f=>ed.addEventListener('input',f),
+ // Interligne enregistré avec le texte : valeurs fixes + curseur ; la dernière valeur choisie sert de départ pour un nouveau texte
+ const lsel=box.querySelector('[data-l=sel]'),lrng=box.querySelector('[data-l=rng]'),lout=box.querySelector('[data-l=out]');let lh=null;
+ const PRE=['1.15','1.5','2'];
+ const remembered=()=>{try{const v=parseFloat(localStorage.getItem('lh'));return v>=1&&v<=3?v:null}catch{return null}};
+ const setLH=v=>{const n=v==null||v===''||isNaN(+v)?null:Math.min(3,Math.max(1,+v));lh=n;ed.style.lineHeight=n?String(n):'';
+  if(lsel){lsel.value=n==null?'':(PRE.includes(String(n))?String(n):'x');lrng.value=n||1.7;lout.textContent=n?String(n).replace('.',','):'—'}};
+ const userLH=n=>{setLH(n);try{localStorage.setItem('lh',n==null?'':String(n))}catch{}};
+ if(lsel){lsel.onchange=()=>{if(lsel.value==='x'){lsel.value=lh?'x':'';return}userLH(lsel.value===''?null:+lsel.value)};lrng.oninput=()=>userLH(+lrng.value)}
+ setLH(remembered());
+ return{getLH:()=>lh,setLH,resetLH:()=>setLH(remembered()),el:ed,html:()=>sanitize(ed.innerHTML),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h)},clear:()=>{ed.innerHTML=''},onInput:f=>ed.addEventListener('input',f),
   isFull,exitFull:exit,notify:t=>{box.querySelector('.edmsg').textContent=t}};
 }

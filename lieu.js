@@ -7,7 +7,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let PW=null,TOK='',editId=null,all=[];
-const ED=initEditor($('#edbox'),'Écrivez ici…',{onDraft:async()=>{if(await send(true))ED.exitFull()}});
+const ED=initEditor($('#edbox'),'Écrivez ici…',{actions:true});
 
 const S=JSON.parse(localStorage.getItem('cfgL')||'{}');
 const host=location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'';
@@ -69,8 +69,8 @@ $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
 $('#date').value=today();
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
-function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
-$('#cancel').onclick=()=>{reset();msg('')};
+function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();ED.resetLH();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
+$('#del').onclick=()=>delOrClear();
 
 $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let h='';
  try{
@@ -92,18 +92,18 @@ async function send(draft){
  if(draft&&was&&!was.draft&&!await confirmBox('Ce texte est en ligne. Le retirer du site et le garder en brouillon ?','Retirer du site'))return;
  if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » ?`))return;
  try{msg('Enregistrement en cours…');
-  const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;
+  const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;{const lhv=ED.getLH();if(lhv)e.lh=lhv}
   const i=list.findIndex(x=>x.id===id&&x.by==='invite');placeText(list,e);i>=0?list[i]=e:list.push(e);
   await save(list,sha,'Mise a jour');reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();return true;
  }catch(err){msg(bad(err))}}
-$('#pub').onclick=()=>send(false);
-$('#draft').onclick=()=>send(true);
+$('#pub').onclick=async()=>{if(await send(false))ED.exitFull()};
+$('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
 
 $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
  const a=b.dataset.a,id=b.dataset.id,own=x=>!!x&&ownerOf(x)==='invite';
  try{
   if(a==='edit'){const t=all.find(x=>x.id===id&&x.by==='invite');if(!t)return;
-   editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';
+   editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
    upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
   let text=null,name=null;
   if(a==='del'){if(!confirm('Supprimer ce texte définitivement ?'))return;text='Texte supprimé.'}
@@ -119,3 +119,13 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
   else if((a==='tup'||a==='tdown')&&own(tg))moveText(list,id,a==='tup'?-1:1);
   await save(nl,sha,'Mise a jour');if(text)msg(text);refresh();
  }catch(e){msg(bad(e))}};
+
+// Supprimer : texte en cours de modification -> suppression définitive (le sien) ; nouveau texte -> vide le formulaire
+async function delOrClear(){
+ if(editId){
+  const t=all.find(x=>x.id===editId&&x.by==='invite');
+  if(!await confirmBox('Supprimer définitivement « '+(t?t.title:'ce texte')+' » ?','Supprimer'))return;
+  try{const{list,sha}=await load();await save(list.filter(x=>!(x.id===editId&&x.by==='invite')),sha,'Mise a jour');reset();msg('Texte supprimé.');refresh();ED.exitFull()}catch(e){msg(bad(e))}
+ }else{
+  if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
+  reset();msg('Formulaire vidé.');ED.exitFull()}}

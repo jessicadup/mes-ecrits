@@ -6,7 +6,20 @@ const byOrder=(a,b)=>((a.ord==null?1e9:a.ord)-(b.ord==null?1e9:b.ord))||(a.date|
 const catsOf=(l,sec,by)=>l.filter(x=>isCat(x)&&x.section===sec&&(by==null||ownerOf(x)===by)).sort((a,b)=>(a.order||0)-(b.order||0));
 function groupTexts(texts,cats){const known=new Set(cats.map(c=>c.id));
  return{g:cats.map(c=>({cat:c,items:texts.filter(t=>t.cat===c.id).sort(byOrder)})),rest:texts.filter(t=>!t.cat||!known.has(t.cat))}}
-const siblings=(t,pool)=>pool.filter(x=>!isCat(x)&&x.cat===t.cat&&ownerOf(x)===ownerOf(t)&&x.category===t.category).sort(byOrder);
+const siblings=(t,pool)=>pool.filter(x=>!isCat(x)&&x.cat===t.cat&&ownerOf(x)===ownerOf(t)).sort(byOrder);
+
+// Anciennes données (rubriques « Pour mes filles » / « Textes libres » + catégories) -> rubriques à plat.
+// Appliquée en lecture sur le site et dans l'admin ; sans effet si les données sont déjà au nouveau format.
+function normalizeMain(list){
+ const old=list.filter(x=>isCat(x)&&(x.section==='roman'||x.section==='libre')).sort((a,b)=>(a.section==='roman'?0:1)-(b.section==='roman'?0:1)||(a.order||0)-(b.order||0));
+ const legacyTxt=list.some(x=>!isCat(x)&&(x.category==='roman'||x.category==='libre'));
+ if(!old.length&&!legacyTxt)return list;
+ const rt={id:'rub-roman-temoignage',kind:'cat',section:'main',name:'Roman - Témoignage',order:0};
+ [rt,...old].forEach((r,i)=>{r.section='main';r.order=i+1});
+ list.push(rt);
+ list.forEach(t=>{if(isCat(t))return;if(t.category==='roman'&&!t.cat)t.cat=rt.id;if(t.category==='roman'||t.category==='libre')t.category='main'});
+ list.filter(t=>!isCat(t)&&t.cat===rt.id).sort(byOrder).forEach((t,i)=>t.ord=i+1);
+ return list}
 
 // --- modifications de la liste (utilisées par les pages d'édition) ---
 function addCat(list,sec,name,by){
@@ -24,7 +37,7 @@ function moveText(list,id,dir){const t=list.find(x=>x.id===id&&!isCat(x));if(!t|
 // place un texte dans une catégorie : à la fin s'il est nouveau ou change de catégorie, sinon il garde sa place
 function placeText(list,e){
  if(!e.cat){delete e.cat;delete e.ord;return}
- const inGrp=x=>!isCat(x)&&x.cat===e.cat&&ownerOf(x)===ownerOf(e)&&x.category===e.category;
+ const inGrp=x=>!isCat(x)&&x.cat===e.cat&&ownerOf(x)===ownerOf(e);
  const prev=list.find(x=>x.id===e.id&&!isCat(x));
  if(prev&&prev.cat===e.cat){const all=list.filter(inGrp).sort(byOrder),p=all.findIndex(x=>x.id===e.id);if(p>=0)all[p]=e;all.forEach((x,k)=>x.ord=k+1)}
  else{const all=list.filter(x=>inGrp(x)&&x.id!==e.id).sort(byOrder);all.forEach((x,k)=>x.ord=k+1);e.ord=all.length+1}}
@@ -42,6 +55,6 @@ function treeHtml(o){ // o:{texts,cats,meta}
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const row=(t,mv,first,last)=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':E(t.title)}</b><span>${o.meta(t)}</span></div><div>${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}${t.enc?'':`<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button>`}<button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div></div>`;
  let h='';
- g.forEach((x,i)=>{h+=`<div class="cg"><div class="item row cgh"><div><b>${E(x.cat.name)}</b><span>Catégorie · ${x.items.length} texte(s)</span></div><div><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer</button></div></div>${x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join('')}</div>`});
- if(rest.length)h+=`<div class="cg">${g.length?'<div class="item cgh"><b>Sans catégorie</b></div>':''}${[...rest].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>row(t,false)).join('')}</div>`;
+ g.forEach((x,i)=>{h+=`<div class="cg"><div class="item row cgh"><div><b>${E(x.cat.name)}</b><span>${o.label||'Catégorie'} · ${x.items.length} texte(s)</span></div><div><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer</button></div></div>${x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join('')}</div>`});
+ if(rest.length)h+=`<div class="cg">${g.length||o.restAlways?`<div class="item cgh"><b>${o.restTitle||'Sans catégorie'}</b></div>`:''}${[...rest].sort(o.restAsc?byOrder:(a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>row(t,false)).join('')}</div>`;
  return h||'<p class="empty">Aucun texte pour l’instant.</p>'}

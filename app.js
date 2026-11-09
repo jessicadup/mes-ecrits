@@ -1,7 +1,8 @@
 const $=s=>document.querySelector(s),main=$('#main');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const CATS={roman:['Pour mes filles','Un roman-témoignage, écrit pour elles.'],libre:['Textes libres','Des textes posés ici, sans lien entre eux.'],grivois:['Privé','Un coin réservé. Le mot de passe est nécessaire.']};
-let texts=[],plain={},lieu=[],mcats=[],lieuCats=[],open=false;
+let texts=[],plain={},lieu=[],mcats=[],lieuCats=[],open=false,lieuOnly=false;
+const rubName=t=>(mcats.find(c=>c.id===t.cat)||{name:'Sans rubrique'}).name;
 const OWNER=CFG.owner||(location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'');
 const LIEU_URL=()=>`https://raw.githubusercontent.com/${OWNER}/${CFG.lieu}/${CFG.branch}/lieu.json?_=${Date.now()}`;
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
@@ -13,7 +14,7 @@ const sortD=l=>[...l].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 const wc=s=>(String(s).match(/\S+/g)||[]).length;
 const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
 const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${knot(t)}${esc(v.title)}</b><span>${sc?CATS[t.category][0]+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
+const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${knot(t)}${esc(v.title)}</b><span>${sc?rubName(t)+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
 
 // Accordéon des catégories : seuls les noms s'affichent, un clic déplie la liste des textes (styles intégrés ici)
 (function(){if(document.getElementById('acc-css'))return;const s=document.createElement('style');s.id='acc-css';s.textContent=`
@@ -44,11 +45,21 @@ function grouped(items,cats,rule,scope){
  if(rest.length)h+=acc(scope+':none','Sans catégorie',rest.length,list([...rest].sort(rule)));
  return h}
 main.addEventListener('click',e=>{const h=e.target.closest('.acc-h');if(!h)return;
- const box=h.parentElement,b=box.querySelector('.acc-b'),o=!b.classList.contains('open');
- b.classList.toggle('open',o);h.setAttribute('aria-expanded',String(o));o?openSet.add(box.dataset.k):openSet.delete(box.dataset.k)});
+ const box=h.parentElement,b=box.querySelector('.acc-b'),o=!b.classList.contains('open'),k=box.dataset.k;
+ if(o&&k.startsWith('main:'))main.querySelectorAll('.acc').forEach(x=>{if(x!==box&&x.dataset.k.startsWith('main:')){x.querySelector('.acc-b').classList.remove('open');x.querySelector('.acc-h').setAttribute('aria-expanded','false');openSet.delete(x.dataset.k)}});
+ b.classList.toggle('open',o);h.setAttribute('aria-expanded',String(o));o?openSet.add(k):openSet.delete(k)});
+
+function rubHtml(){
+ const rubs=catsOf(mcats,'main'),known=new Set(rubs.map(r=>r.id));
+ const g=rubs.map(r=>({r,items:texts.filter(t=>t.cat===r.id).sort(byOrder)})).filter(x=>x.items.length);
+ const rest=texts.filter(t=>!t.cat||!known.has(t.cat)).sort(byOrder);
+ let h=g.map(x=>acc('main:'+x.r.id,x.r.name,x.items.length,list(x.items))).join('');
+ if(rest.length)h+=acc('main:none','Sans rubrique',rest.length,list(rest));
+ return h||'<p class="empty">Rien ici pour l’instant.</p>'}
 
 function home(){
- main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+Object.entries(CATS).filter(([k])=>k!=='grivois').map(([k,v])=>`<a class="item" href="#/${k}"><b>${v[0]}</b><span>${v[1]}</span></a>`).join('')+'</div>';
+ if(lieuOnly){main.innerHTML='<p style="text-align:center;margin:3rem 0"><button class="ghost" id="reopen" type="button">Saisir le mot de passe du lieu</button></p>';$('#reopen').onclick=openDoor;return}
+ main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+rubHtml()+'</div>';
  $('#q').oninput=e=>{const q=nrm(e.target.value.trim());$('#cats').hidden=!!q;
   const r=q?texts.filter(t=>{const v=plain[t.id]||t;return t.category!=='grivois'&&v.title&&nrm(v.title+' '+v.body).includes(q)}):[];
   $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
@@ -64,19 +75,19 @@ function cat(c){
 function show(id){
  const t=texts.find(x=>x.id===id)||lieu.find(x=>x.id===id);if(!t)return home();
  const g=t.category==='grivois';if(g&&!lieuOk){location.hash='#/envers';return}
- let top='',nav='';
+ let top='',nav='';const lhn=+t.lh,lhs=lhn>=1&&lhn<=3?` style="line-height:${lhn}"`:'';
  if(t.cat){const c=(g?lieuCats:mcats).find(x=>x.id===t.cat),sib=siblings(t,g?lieu:texts),i=sib.findIndex(x=>x.id===t.id);
   if(c&&i>=0){top=`<p class="catline" style="margin:1.4rem 0 0;color:var(--accent);font-size:.9rem">${esc(c.name)} · ${i+1} / ${sib.length}</p>`;
    const bs='display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:2.8rem;padding:0 1.2rem;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);flex:1 1 13rem;text-align:center';
    nav=`<div class="chnav" style="display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2.5rem">${i>0?`<a class="chbtn" style="${bs}" href="#/t/${sib[i-1].id}">← Chapitre précédent</a>`:'<span style="flex:1 1 13rem"></span>'}${i<sib.length-1?`<a class="chbtn" style="${bs}" href="#/t/${sib[i+1].id}">Chapitre suivant →</a>`:'<span style="flex:1 1 13rem"></span>'}</div>`}}
- main.innerHTML=`<a class="back" href="#/${g?'envers':t.category}">← ${g?'Le lieu sûr':CATS[t.category][0]}</a>${top}<h1 style="margin-top:${top?'.4rem':'1.5rem'}">${knot(t)}${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text">${t.html?sanitize(t.html):body(t.body)}</div>${nav}`;
+ main.innerHTML=`<a class="back" href="#/${g?'envers':''}">← ${g?'Le lieu sûr':'Retour'}</a>${top}<h1 style="margin-top:${top?'.4rem':'1.5rem'}">${knot(t)}${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text"${lhs}>${t.html?sanitize(t.html):body(t.body)}</div>${nav}`;
 }
 
 let lieuOk=false;
 function route(){
  if(!open)return;
  const h=location.hash.replace(/^#\/?/,'').split('/'),k=h[0];
- let view=k==='t'?'t':k==='envers'?'envers':(CATS[k]&&k!=='grivois')?k:'home',ask=false;
+ let view=k==='t'?'t':k==='envers'?'envers':'home',ask=false;
  if(view==='envers'&&!lieuOk){view='home';ask=true;history.replaceState(null,'',location.pathname+location.search+'#/')}
  const tx=view==='t'?texts.find(x=>x.id===h[1])||lieu.find(x=>x.id===h[1]):null;
  const env=view==='envers'||!!(tx&&tx.category==='grivois'&&lieuOk);
@@ -84,12 +95,11 @@ function route(){
  document.body.classList.toggle('envers',env);
  document.querySelector('.brand').textContent=document.title=env?'Le lieu sûr':'Mots après maux';
  document.body.classList.toggle('home',view==='home');
- document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#/'+k));
  scrollTo(0,0);
  if(view==='t')return show(h[1]);
  if(view==='envers')return cat('grivois');
- view==='home'?home():cat(view);
- if(ask)openDoor();
+ home();
+ if(ask||lieuOnly)openDoor();
 }
 function openDoor(){
  if($('#door'))return;
@@ -114,9 +124,9 @@ function gate(){
  $('#sp').onchange=e=>{$('#gp').type=e.target.checked?'text':'password'};
  $('#g').onsubmit=async e=>{e.preventDefault();$('#gm').textContent='Vérification…';
   try{const r=await fetch('content/texts.json?'+Date.now()),o=r.ok?await r.json():[];
-   {const all=Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value);mcats=all.filter(isCat);texts=all.filter(t=>!isCat(t)&&t.category!=='grivois'&&!t.draft)}
-   open=true;$('nav').hidden=false;route()}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
-gate();
+   {const all=normalizeMain(Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value));mcats=all.filter(isCat);texts=all.filter(t=>!isCat(t)&&t.category!=='grivois'&&!t.draft)}
+   open=true;route()}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
+if(/^#\/lieu\b/.test(location.hash)){lieuOnly=true;open=true;history.replaceState(null,'',location.pathname+location.search+'#/');route()}else gate();
 
 // Dissuasion contre la copie (ne remplace pas le chiffrement)
 const inField=e=>/^(INPUT|TEXTAREA)$/.test((e.target.tagName||''));
