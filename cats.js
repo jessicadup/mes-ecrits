@@ -51,10 +51,49 @@ function placeText(list,e){
 .item.row>div:last-child{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:560px){.item.row{flex-direction:column;align-items:flex-start}.item.row>div:last-child{justify-content:flex-start}}
 `;document.head.appendChild(s)})();
-function treeHtml(o){ // o:{texts,cats,meta}
+function treeHtmlFlat(o){ // ancien affichage à plat (encore utilisé par lieu.js, remplacé à la livraison 2) ; o:{texts,cats,meta}
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const row=(t,mv,first,last)=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':E(t.title)}</b><span>${o.meta(t)}</span></div><div>${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}${t.enc?'':`<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button>`}<button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div></div>`;
  let h='';
  g.forEach((x,i)=>{h+=`<div class="cg"><div class="item row cgh"><div><b>${E(x.cat.name)}</b><span>${o.label||'Catégorie'} · ${x.items.length} texte(s)</span></div><div><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer</button></div></div>${x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join('')}</div>`});
  if(rest.length)h+=`<div class="cg">${g.length||o.restAlways?`<div class="item cgh"><b>${o.restTitle||'Sans catégorie'}</b></div>`:''}${[...rest].sort(o.restAsc?byOrder:(a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>row(t,false)).join('')}</div>`;
  return h||'<p class="empty">Aucun texte pour l’instant.</p>'}
+
+// --- Consultation en accordéon (admin) : seuls les noms des rubriques sont visibles, une seule rubrique ouverte sur la page ---
+let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour « Sans rubrique »)
+const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
+(function(){if(document.getElementById('ca-css'))return;const s=document.createElement('style');s.id='ca-css';s.textContent=`
+.ca{border:1px solid var(--line,#dde2dc);border-radius:8px;margin:0 0 .8rem;overflow:hidden}
+.ca-h{display:flex;align-items:center;gap:.8rem;width:100%;box-sizing:border-box;margin:0;padding:1rem 1.1rem;background:none;border:0;border-radius:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ca-h:hover{background:rgba(122,106,128,.08)}
+.ca-n{font:500 1.45rem/1.2 var(--serif,Georgia,serif)}
+.ca-c{font-size:.85rem;color:var(--soft,#6f7780)}
+.ca-a{flex:none;width:.55rem;height:.55rem;border-right:2px solid var(--accent,#7a6a80);border-bottom:2px solid var(--accent,#7a6a80);transform:rotate(-45deg);transition:transform .35s ease}
+.ca-h[aria-expanded=true] .ca-a{transform:rotate(45deg)}
+.ca-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.ca-b.open{grid-template-rows:1fr}
+.ca-i{min-height:0;overflow:hidden;padding:0 1.1rem;visibility:hidden;transition:visibility 0s .35s}
+.ca-b.open .ca-i{visibility:visible;transition:visibility 0s}
+.ca-t{display:flex;flex-wrap:wrap;gap:.35rem;padding:.2rem 0 .8rem;border-bottom:1px solid var(--line,#dde2dc)}
+.ca .item{padding:.8rem 0}.ca .item:last-child{border-bottom:0}.ca .item b{font-size:1.25rem}
+.ca .item.row>.bb{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}
+.ca .item.row>.bb button[disabled],.ca-t button[disabled]{opacity:.35;cursor:default}
+@media(max-width:560px){.ca .item.row{flex-direction:column;align-items:flex-start}.ca .item.row>.bb{justify-content:flex-start}}
+@media(prefers-reduced-motion:reduce){.ca-b,.ca-a{transition:none}.ca-i{transition:none}}
+`;document.head.appendChild(s)})();
+document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if(!h)return;
+ const box=h.parentElement,o=!box.querySelector('.ca-b').classList.contains('open');
+ document.querySelectorAll('.cons .ca').forEach(x=>{const on=o&&x===box;x.querySelector('.ca-b').classList.toggle('open',on);x.querySelector('.ca-h').setAttribute('aria-expanded',String(on))});
+ CAOPEN=o?box.dataset.k:null});
+// o:{texts,cats,meta,scope,restTitle,readonly,acc:true}
+function treeHtmlAcc(o){
+ const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
+ const row=(t,mv,first,last)=>`<div class="item row"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
+ const acc=(key,name,n,tools,inner)=>{const op=CAOPEN===key;
+  return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${E(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
+ let h='';
+ g.forEach((x,i)=>{const tools=ro?'':`<div class="ca-t"><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer la rubrique</button></div>`;
+  h+=acc(sc+':'+x.cat.id,x.cat.name,x.items.length,tools,x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join(''))});
+ if(rest.length)h+=acc(sc+':none',o.restTitle||'Sans rubrique',rest.length,'',[...rest].sort(byOrder).map(t=>row(t,false)).join(''));
+ return `<div class="cons">${h||'<p class="empty">Aucun texte pour l’instant.</p>'}</div>`}
+function treeHtml(o){return o.acc?treeHtmlAcc(o):treeHtmlFlat(o)}

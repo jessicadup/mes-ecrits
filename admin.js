@@ -77,7 +77,7 @@ $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f
  upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
 async function send(draft){
- const cg=$('#catg').value==='__new'?'':$('#catg').value,cat=$('#cat').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
+ const cg=$('#catg').value==='__new'?'':$('#catg').value,cat=$('#cat').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36),wasEdit=!!editId;
  if(!text)return msg('Il manque le texte.');
  if(!title)return msg('Il manque le titre.');
  const was=(cat==='grivois'?lcur:cur).find(x=>x.id===id);
@@ -95,7 +95,8 @@ async function send(draft){
    const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);if(cg)e.cat=cg;placeText(list,e);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');refresh();
   }
-  reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');return true;
+  openAt(cat==='grivois'?'lieu-moi':'main',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
+   if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=async()=>{if(await send(false))ED.exitFull()};
 $('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
@@ -103,26 +104,24 @@ $('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
 // Mes textes (site principal)
 async function refresh(strict){
  try{const{list,size}=await load();cur=list;pie(list,size);
-  $('#mig').hidden=!list.some(t=>t.category==='grivois');
   renderMain(list);
  }catch(e){if(strict)throw e;msg(bad(e))}}
 $('#list').onclick=ev=>treeAction(ev,'main');
 
 function renderMain(list){const m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
- const tx=textsOf(list).filter(t=>t.category!=='grivois'),old=textsOf(list).filter(t=>t.category==='grivois');
- let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,label:'Rubrique',restTitle:'Sans rubrique',restAlways:true,restAsc:true});
- if(old.length)h+='<h2 class="rh">Anciens textes Privé</h2>'+treeHtml({texts:old,cats:[],meta:m});
+ const tx=textsOf(list).filter(t=>t.category!=='grivois');
+ let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:'Sans rubrique',acc:true});
  $('#list').innerHTML=h;fillCats()}
 
 // Catégories : liste déroulante du formulaire
 function fillCats(){const s=$('#catg');if(!s)return;const L=$('#cat').value==='grivois',keep=s.value;
  const src=L?catsOf(lcur,'grivois','moi'):catsOf(cur,'main');
- $('label[for=catg]').textContent=L?'Catégorie (roman, recueil, série…)':'Rubrique';
- s.innerHTML=`<option value="">${L?'Sans catégorie':'Sans rubrique'}</option>`+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+`<option value="__new">${L?'+ Nouvelle catégorie…':'+ Nouvelle rubrique…'}</option>`;
+ $('label[for=catg]').textContent='Rubrique';
+ s.innerHTML='<option value="">Sans rubrique</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
  s.value=[...s.options].some(o=>o.value===keep)?keep:''}
 $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
  const lieuS=$('#cat').value==='grivois',sec=lieuS?'grivois':'main',pw=lieuS?($('#pw').value||LP):PW;
- const name=prompt(lieuS?'Nom de la nouvelle catégorie :':'Nom de la nouvelle rubrique :');if(!name||!name.trim()){s.value='';return}
+ const name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim()){s.value='';return}
  if(lieuS&&(!pw||pw.length<10)){s.value='';return msg('Saisissez d’abord le mot de passe du lieu sûr (10 caractères minimum).')}
  try{const store=lieuS?'lieu':'main',{list,sha}=await load(store,pw),c=addCat(list,sec,name);await save(list,sha,'Mise a jour',store,pw);
   if(lieuS){LP=pw;lcur=list;renderLieu()}else{cur=list;await refresh()}
@@ -133,27 +132,33 @@ $('#pw').onchange=async()=>{const p=$('#pw').value;if(p.length<10||$('#cat').val
 async function treeAction(ev,store){
  const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
  const a=b.dataset.a,id=b.dataset.id,L=store==='lieu',pw=L?LP:PW,src=()=>L?lcur:cur;
- const after=async list=>{if(L){lcur=list;renderLieu()}else await refresh()};
- try{
+ const sec=L?'grivois':'main',after=async list=>{if(L){lcur=list;renderLieu()}else await refresh()};
+  if(b.dataset.by==='invite')return;
+  {const tg=id&&src().find(x=>x.id===id);if(tg&&ownerOf(tg)==='invite')return}
+  try{
   if(a==='edit'){const t=src().find(x=>x.id===id);if(!t)return;
    editId=t.id;$('#cat').value=L?'grivois':'main';$('#cat').onchange();$('#date').value=t.date||today();
    $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));if(L)$('#pw').value=LP;$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
    upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
   let text=null,name=null,dest=null;
-  if(a==='del'){if(!confirm('Supprimer ce texte définitivement ?'))return;text='Texte supprimé.'}
-  else if(a==='cnew'){name=prompt(L?'Nom de la nouvelle catégorie :':'Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text=L?'Catégorie créée.':'Rubrique créée.'}
-  else if(a==='cren'){const c=src().find(x=>x.id===id);name=prompt(L?'Nouveau nom de la catégorie :':'Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text=L?'Catégorie renommée.':'Rubrique renommée.'}
+  if(a==='del'){const t0=src().find(x=>x.id===id);if(!await confirmBox('Supprimer définitivement « '+(t0?t0.title:'ce texte')+' » ?','Supprimer'))return;text='Texte supprimé.'}
+   else if(a==='trub'){const t0=src().find(x=>x.id===id);if(!t0)return;
+    dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(src(),sec,'moi').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
+  else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
+  else if(a==='cren'){const c=src().find(x=>x.id===id);name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
   else if(a==='cdel'){const c=src().find(x=>x.id===id);
-   if(L){if(!confirm(`Supprimer la catégorie « ${c?c.name:''} » ? Ses textes passeront dans « Sans catégorie ».`))return;text='Catégorie supprimée.'}
-   else{const n=textsOf(src()).filter(t=>t.cat===id).length;
-    if(n){dest=await chooseDest(c?c.name:'',n,catsOf(src(),'main').filter(x=>x.id!==id));if(!dest)return}
+    const n=textsOf(src()).filter(t=>t.cat===id).length;
+    if(n){dest=await chooseDest(c?c.name:'',n,catsOf(src(),sec,'moi').filter(x=>x.id!==id));if(!dest)return}
     else if(!confirm(`Supprimer la rubrique « ${c?c.name:''} » ?`))return;
-    text='Rubrique supprimée.'}}
-  const{list,sha}=await load(store,pw);let nl=list;
+    text='Rubrique supprimée.'}
+const{list,sha}=await load(store,pw);let nl=list;
   if(a==='del')nl=list.filter(x=>x.id!==id);
   else if(a==='cnew')addCat(list,b.dataset.sec,name,b.dataset.by);
   else if(a==='cren')renameCat(list,id,name);
-  else if(a==='cdel'){if(dest)moveTexts(list,id,dest);removeCat(list,id)}
+  else if(a==='cdel'){if(dest)moveTexts(list,id,dest,sec);removeCat(list,id)}
+   else if(a==='trub'){const i=list.findIndex(x=>x.id===id&&!isCat(x));if(i<0)return msg('Texte introuvable.');
+    const tg=dest.mode==='new'?addCat(list,sec,dest.name):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)):null;
+    const e={...list[i]};if(tg)e.cat=tg.id;else delete e.cat;placeText(list,e);list[i]=e;openAt(L?'lieu-moi':'main',tg?tg.id:null)}
   else if(a==='cup'||a==='cdown')moveCat(list,id,a==='cup'?-1:1);
   else if(a==='tup'||a==='tdown')moveText(list,id,a==='tup'?-1:1);
   await save(nl,sha,'Mise a jour',store,pw);if(text)msg(text);await after(nl);
@@ -161,22 +166,13 @@ async function treeAction(ev,store){
 
 // Le lieu sûr (fichier séparé, son propre mot de passe)
 function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
- const btn=by=>`<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="${by}">+ Nouvelle catégorie</button></p>`;
- $('#llist').innerHTML='<h2 class="rh">Mes textes</h2>'+btn('moi')+treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m})+'<h2 class="rh">Textes de l’invité</h2>'+btn('invite')+treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m});fillCats()}
+ $('#llist').innerHTML='<h2 class="rh">Mes textes</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="moi">+ Nouvelle rubrique</button></p>'
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique',acc:true})
+  +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true,acc:true});fillCats()}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=ev=>treeAction(ev,'lieu');
-$('#mig').onclick=async()=>{
- const po=prompt('Ancien mot de passe de vos textes Privé :');if(!po)return;
- const pn=prompt('Mot de passe du lieu sûr (10 caractères minimum). Vous pouvez reprendre l’ancien s’il est assez long, ou en choisir un nouveau :');
- if(!pn||pn.length<10)return msg('Le mot de passe du lieu sûr doit avoir 10 caractères minimum. Rien n’a été transféré.');
- try{msg('Transfert en cours…');const M=await load(),L=await load('lieu',pn),moved=new Set();
-  for(const t of M.list.filter(t=>t.category==='grivois')){try{const v=await unlock(t.enc,po);L.list.push({id:t.id,date:t.date,title:v.title,body:v.body,n:cnt(v.body),by:'moi'});moved.add(t.id)}catch{}}
-  if(!moved.size)return msg('L’ancien mot de passe ne correspond à aucun ancien texte.');
-  await save(L.list,L.sha,'Mise a jour','lieu',pn);
-  await save(M.list.filter(t=>!moved.has(t.id)),M.sha,'Mise a jour du contenu');
-  LP=pn;lcur=L.list;await refresh();renderLieu();msg(moved.size+' texte(s) transféré(s) vers le lieu sûr.')}catch(e){msg(bad(e))}};
-
 // Camembert de mémoire (site principal) et sauvegarde
 const LIMIT=1000000,COL={main:'var(--accent)'};
 function pie(list,size){
@@ -214,30 +210,37 @@ async function delOrClear(){
   if(!await confirmBox('Supprimer définitivement « '+(t?t.title:'ce texte')+' » ?','Supprimer'))return;
   try{const store=L?'lieu':'main',{list,sha}=await load(store,pw),nl=list.filter(x=>x.id!==editId);await save(nl,sha,'Mise a jour',store,pw);
    if(L){lcur=nl;renderLieu()}else await refresh();
-   reset();msg('Texte supprimé.');ED.exitFull()}catch(e){msg(bad(e))}
+   reset();msg('Texte supprimé.');ED.exitFull();view('list');scrollTo(0,0)}catch(e){msg(bad(e))}
  }else{
   if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
   reset();msg('Formulaire vidé.');ED.exitFull()}}
 
-// Suppression d'une rubrique : choix de la destination des textes (autre rubrique, nouvelle rubrique, ou « Sans rubrique »)
-function chooseDest(name,n,others){return new Promise(res=>{
+// Choix d'une rubrique d'arrivée (suppression d'une rubrique, ou bouton « Rubrique » d'un texte)
+// o:{text,ok,others,none,pref} -> {mode:'none'}|{mode:'cat',id}|{mode:'new',name}|null
+function askRub(o){return new Promise(res=>{
  const d=document.createElement('div');d.className='dlg';
- d.innerHTML=`<div role="dialog" aria-modal="true" style="text-align:left"><p class="t" style="text-align:center"></p>
-  <label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none" checked> Dans « Sans rubrique »</label>
-  ${others.length?`<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="cat"> Dans la rubrique : <select class="dsel" style="width:auto;max-width:100%">${others.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>`:''}
-  <label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="new"> Dans une nouvelle rubrique : <input type="text" class="dnew" placeholder="Nom de la rubrique" style="margin-top:.3rem"></label>
-  <p class="row" style="flex-wrap:wrap;margin-top:1rem"><button class="ok" type="button">Supprimer la rubrique</button><button class="ghost no" type="button">Annuler</button></p></div>`;
- d.querySelector('.t').textContent=`La rubrique « ${name} » contient ${n} texte${n>1?'s':''}. Où les déplacer ?`;
+ const rows=[];
+ if(o.none)rows.push(['none','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none"> Dans « Sans rubrique »</label>']);
+ if(o.others.length)rows.push(['cat',`<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="cat"> Dans la rubrique : <select class="dsel" style="width:auto;max-width:100%">${o.others.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>`]);
+ rows.push(['new','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="new"> Dans une nouvelle rubrique : <input type="text" class="dnew" placeholder="Nom de la rubrique" style="margin-top:.3rem"></label>']);
+ d.innerHTML=`<div role="dialog" aria-modal="true" style="text-align:left"><p class="t" style="text-align:center"></p>${rows.map(r=>r[1]).join('')}<p class="row" style="flex-wrap:wrap;margin-top:1rem"><button class="ok" type="button"></button><button class="ghost no" type="button">Annuler</button></p></div>`;
+ d.querySelector('.t').textContent=o.text;d.querySelector('.ok').textContent=o.ok;
+ const want=rows.some(r=>r[0]===o.pref)?o.pref:rows[0][0];d.querySelector(`input[value=${want}]`).checked=true;
+ const dsel=d.querySelector('.dsel'),dnew=d.querySelector('.dnew');
+ if(dsel)dsel.onchange=()=>{d.querySelector('input[value=cat]').checked=true};
+ dnew.onfocus=()=>{d.querySelector('input[value=new]').checked=true};
  document.body.appendChild(d);
  const end=v=>{d.remove();res(v)};
  d.querySelector('.no').onclick=()=>end(null);
  d.addEventListener('keydown',e=>{if(e.key==='Escape')end(null)});
  d.querySelector('.ok').onclick=()=>{const m=d.querySelector('input[name=dm]:checked').value;
   if(m==='none')return end({mode:'none'});
-  if(m==='cat')return end({mode:'cat',id:d.querySelector('.dsel').value});
-  const nm=d.querySelector('.dnew').value.trim();if(!nm){d.querySelector('.dnew').focus();return}end({mode:'new',name:nm})};
+  if(m==='cat')return end({mode:'cat',id:dsel.value});
+  const nm=dnew.value.trim();if(!nm){dnew.focus();return}end({mode:'new',name:nm})};
  d.querySelector('.ok').focus()})}
-function moveTexts(list,from,dest){
- const target=dest.mode==='new'?addCat(list,'main',dest.name):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)):null;
+const chooseDest=(name,n,others)=>askRub({text:`La rubrique « ${name} » contient ${n} texte${n>1?'s':''}. Où les déplacer ?`,ok:'Supprimer la rubrique',others,none:true,pref:'none'});
+function moveTexts(list,from,dest,sec){
+ const target=dest.mode==='new'?addCat(list,sec||'main',dest.name):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)):null;
+ openAt(sec==='grivois'?'lieu-moi':'main',target?target.id:null);
  list.filter(t=>!isCat(t)&&t.cat===from).sort(byOrder).forEach(t=>{if(target){t.cat=target.id;t.ord=1e9}else{delete t.cat;delete t.ord}});
  if(target)list.filter(t=>!isCat(t)&&t.cat===target.id).sort(byOrder).forEach((t,k)=>t.ord=k+1)}
