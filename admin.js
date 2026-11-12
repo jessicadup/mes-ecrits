@@ -110,7 +110,7 @@ $('#list').onclick=ev=>treeAction(ev,'main');
 
 function renderMain(list){const m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  const tx=textsOf(list).filter(t=>t.category!=='grivois');
- let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:'Sans rubrique',acc:true});
+ let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:'Sans rubrique'});
  $('#list').innerHTML=h;fillCats()}
 
 // Catégories : liste déroulante du formulaire
@@ -167,9 +167,9 @@ const{list,sha}=await load(store,pw);let nl=list;
 // Le lieu sûr (fichier séparé, son propre mot de passe)
 function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  $('#llist').innerHTML='<h2 class="rh">Mes textes</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="moi">+ Nouvelle rubrique</button></p>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique',acc:true})
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique'})
   +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true,acc:true});fillCats()}
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true});fillCats()}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=ev=>treeAction(ev,'lieu');
@@ -214,33 +214,3 @@ async function delOrClear(){
  }else{
   if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
   reset();msg('Formulaire vidé.');ED.exitFull()}}
-
-// Choix d'une rubrique d'arrivée (suppression d'une rubrique, ou bouton « Rubrique » d'un texte)
-// o:{text,ok,others,none,pref} -> {mode:'none'}|{mode:'cat',id}|{mode:'new',name}|null
-function askRub(o){return new Promise(res=>{
- const d=document.createElement('div');d.className='dlg';
- const rows=[];
- if(o.none)rows.push(['none','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none"> Dans « Sans rubrique »</label>']);
- if(o.others.length)rows.push(['cat',`<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="cat"> Dans la rubrique : <select class="dsel" style="width:auto;max-width:100%">${o.others.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label>`]);
- rows.push(['new','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="new"> Dans une nouvelle rubrique : <input type="text" class="dnew" placeholder="Nom de la rubrique" style="margin-top:.3rem"></label>']);
- d.innerHTML=`<div role="dialog" aria-modal="true" style="text-align:left"><p class="t" style="text-align:center"></p>${rows.map(r=>r[1]).join('')}<p class="row" style="flex-wrap:wrap;margin-top:1rem"><button class="ok" type="button"></button><button class="ghost no" type="button">Annuler</button></p></div>`;
- d.querySelector('.t').textContent=o.text;d.querySelector('.ok').textContent=o.ok;
- const want=rows.some(r=>r[0]===o.pref)?o.pref:rows[0][0];d.querySelector(`input[value=${want}]`).checked=true;
- const dsel=d.querySelector('.dsel'),dnew=d.querySelector('.dnew');
- if(dsel)dsel.onchange=()=>{d.querySelector('input[value=cat]').checked=true};
- dnew.onfocus=()=>{d.querySelector('input[value=new]').checked=true};
- document.body.appendChild(d);
- const end=v=>{d.remove();res(v)};
- d.querySelector('.no').onclick=()=>end(null);
- d.addEventListener('keydown',e=>{if(e.key==='Escape')end(null)});
- d.querySelector('.ok').onclick=()=>{const m=d.querySelector('input[name=dm]:checked').value;
-  if(m==='none')return end({mode:'none'});
-  if(m==='cat')return end({mode:'cat',id:dsel.value});
-  const nm=dnew.value.trim();if(!nm){dnew.focus();return}end({mode:'new',name:nm})};
- d.querySelector('.ok').focus()})}
-const chooseDest=(name,n,others)=>askRub({text:`La rubrique « ${name} » contient ${n} texte${n>1?'s':''}. Où les déplacer ?`,ok:'Supprimer la rubrique',others,none:true,pref:'none'});
-function moveTexts(list,from,dest,sec){
- const target=dest.mode==='new'?addCat(list,sec||'main',dest.name):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)):null;
- openAt(sec==='grivois'?'lieu-moi':'main',target?target.id:null);
- list.filter(t=>!isCat(t)&&t.cat===from).sort(byOrder).forEach(t=>{if(target){t.cat=target.id;t.ord=1e9}else{delete t.cat;delete t.ord}});
- if(target)list.filter(t=>!isCat(t)&&t.cat===target.id).sort(byOrder).forEach((t,k)=>t.ord=k+1)}

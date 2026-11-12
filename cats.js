@@ -42,27 +42,11 @@ function placeText(list,e){
  if(prev&&prev.cat===e.cat){const all=list.filter(inGrp).sort(byOrder),p=all.findIndex(x=>x.id===e.id);if(p>=0)all[p]=e;all.forEach((x,k)=>x.ord=k+1)}
  else{const all=list.filter(x=>inGrp(x)&&x.id!==e.id).sort(byOrder);all.forEach((x,k)=>x.ord=k+1);e.ord=all.length+1}}
 
-// --- arborescence pour les pages d'édition (consultation) ---
-(function(){if(document.getElementById('cats-css'))return;const s=document.createElement('style');s.id='cats-css';s.textContent=`
-.cg{margin:0 0 1.2rem}.cgh{background:rgba(122,106,128,.09);padding:.6rem .8rem!important;border-radius:6px;border-bottom:0!important}
-.cg .item.row:not(.cgh){padding-left:1.1rem}
-.rh{font:500 1.5rem var(--serif,Georgia,serif);margin:2rem 0 .3rem}
-.cgh button[disabled],.cg button[disabled]{opacity:.35;cursor:default}
-.item.row>div:last-child{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}
-@media(max-width:560px){.item.row{flex-direction:column;align-items:flex-start}.item.row>div:last-child{justify-content:flex-start}}
-`;document.head.appendChild(s)})();
-function treeHtmlFlat(o){ // ancien affichage à plat (encore utilisé par lieu.js, remplacé à la livraison 2) ; o:{texts,cats,meta}
- const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const row=(t,mv,first,last)=>`<div class="item row"><div><b>${t.enc?'🔒 Ancien texte Privé':E(t.title)}</b><span>${o.meta(t)}</span></div><div>${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}${t.enc?'':`<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button>`}<button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div></div>`;
- let h='';
- g.forEach((x,i)=>{h+=`<div class="cg"><div class="item row cgh"><div><b>${E(x.cat.name)}</b><span>${o.label||'Catégorie'} · ${x.items.length} texte(s)</span></div><div><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer</button></div></div>${x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join('')}</div>`});
- if(rest.length)h+=`<div class="cg">${g.length||o.restAlways?`<div class="item cgh"><b>${o.restTitle||'Sans catégorie'}</b></div>`:''}${[...rest].sort(o.restAsc?byOrder:(a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>row(t,false)).join('')}</div>`;
- return h||'<p class="empty">Aucun texte pour l’instant.</p>'}
-
-// --- Consultation en accordéon (admin) : seuls les noms des rubriques sont visibles, une seule rubrique ouverte sur la page ---
+// --- Consultation en accordéon (admin et page invité) : seuls les noms des rubriques sont visibles, une seule rubrique ouverte sur la page ---
 let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour « Sans rubrique »)
 const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 (function(){if(document.getElementById('ca-css'))return;const s=document.createElement('style');s.id='ca-css';s.textContent=`
+.rh{font:500 1.5rem var(--serif,Georgia,serif);margin:2rem 0 .3rem}
 .ca{border:1px solid var(--line,#dde2dc);border-radius:8px;margin:0 0 .8rem;overflow:hidden}
 .ca-h{display:flex;align-items:center;gap:.8rem;width:100%;box-sizing:border-box;margin:0;padding:1rem 1.1rem;background:none;border:0;border-radius:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ca-h:hover{background:rgba(122,106,128,.08)}
@@ -85,8 +69,8 @@ document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if
  const box=h.parentElement,o=!box.querySelector('.ca-b').classList.contains('open');
  document.querySelectorAll('.cons .ca').forEach(x=>{const on=o&&x===box;x.querySelector('.ca-b').classList.toggle('open',on);x.querySelector('.ca-h').setAttribute('aria-expanded',String(on))});
  CAOPEN=o?box.dataset.k:null});
-// o:{texts,cats,meta,scope,restTitle,readonly,acc:true}
-function treeHtmlAcc(o){
+// o:{texts,cats,meta,scope,restTitle,readonly}
+function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
  const row=(t,mv,first,last)=>`<div class="item row"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
  const acc=(key,name,n,tools,inner)=>{const op=CAOPEN===key;
@@ -96,4 +80,35 @@ function treeHtmlAcc(o){
   h+=acc(sc+':'+x.cat.id,x.cat.name,x.items.length,tools,x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join(''))});
  if(rest.length)h+=acc(sc+':none',o.restTitle||'Sans rubrique',rest.length,'',[...rest].sort(byOrder).map(t=>row(t,false)).join(''));
  return `<div class="cons">${h||'<p class="empty">Aucun texte pour l’instant.</p>'}</div>`}
-function treeHtml(o){return o.acc?treeHtmlAcc(o):treeHtmlFlat(o)}
+
+// Choix d'une rubrique d'arrivée (suppression d'une rubrique, ou bouton « Rubrique » d'un texte)
+// o:{text,ok,others,none,pref} -> {mode:'none'}|{mode:'cat',id}|{mode:'new',name}|null
+function askRub(o){return new Promise(res=>{
+ const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const d=document.createElement('div');d.className='dlg';
+ const rows=[];
+ if(o.none)rows.push(['none','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none"> Dans « Sans rubrique »</label>']);
+ if(o.others.length)rows.push(['cat',`<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="cat"> Dans la rubrique : <select class="dsel" style="width:auto;max-width:100%">${o.others.map(c=>`<option value="${c.id}">${E(c.name)}</option>`).join('')}</select></label>`]);
+ rows.push(['new','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="new"> Dans une nouvelle rubrique : <input type="text" class="dnew" placeholder="Nom de la rubrique" style="margin-top:.3rem"></label>']);
+ d.innerHTML=`<div role="dialog" aria-modal="true" style="text-align:left"><p class="t" style="text-align:center"></p>${rows.map(r=>r[1]).join('')}<p class="row" style="flex-wrap:wrap;margin-top:1rem"><button class="ok" type="button"></button><button class="ghost no" type="button">Annuler</button></p></div>`;
+ d.querySelector('.t').textContent=o.text;d.querySelector('.ok').textContent=o.ok;
+ const want=rows.some(r=>r[0]===o.pref)?o.pref:rows[0][0];d.querySelector(`input[value=${want}]`).checked=true;
+ const dsel=d.querySelector('.dsel'),dnew=d.querySelector('.dnew');
+ if(dsel)dsel.onchange=()=>{d.querySelector('input[value=cat]').checked=true};
+ dnew.onfocus=()=>{d.querySelector('input[value=new]').checked=true};
+ document.body.appendChild(d);
+ const end=v=>{d.remove();res(v)};
+ d.querySelector('.no').onclick=()=>end(null);
+ d.addEventListener('keydown',e=>{if(e.key==='Escape')end(null)});
+ d.querySelector('.ok').onclick=()=>{const m=d.querySelector('input[name=dm]:checked').value;
+  if(m==='none')return end({mode:'none'});
+  if(m==='cat')return end({mode:'cat',id:dsel.value});
+  const nm=dnew.value.trim();if(!nm){dnew.focus();return}end({mode:'new',name:nm})};
+ d.querySelector('.ok').focus()})}
+const chooseDest=(name,n,others)=>askRub({text:`La rubrique « ${name} » contient ${n} texte${n>1?'s':''}. Où les déplacer ?`,ok:'Supprimer la rubrique',others,none:true,pref:'none'});
+// déplace tous les textes d'une rubrique supprimée (sec : 'main' ou 'grivois' ; by : 'invite' pour la page invité)
+function moveTexts(list,from,dest,sec,by){
+ const target=dest.mode==='new'?addCat(list,sec||'main',dest.name,by):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)):null;
+ openAt(sec==='grivois'?(by==='invite'?'lieu-invite':'lieu-moi'):'main',target?target.id:null);
+ list.filter(t=>!isCat(t)&&t.cat===from).sort(byOrder).forEach(t=>{if(target){t.cat=target.id;t.ord=1e9}else{delete t.cat;delete t.ord}});
+ if(target)list.filter(t=>!isCat(t)&&t.cat===target.id).sort(byOrder).forEach((t,k)=>t.ord=k+1)}

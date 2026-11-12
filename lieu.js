@@ -50,20 +50,19 @@ $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  msg('');view(b.dataset.v)};
 
 // Il ne voit et ne modifie que les textes qu'il a lui-même écrits (by:'invite')
-const mine=l=>l.filter(x=>x.by==='invite').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 async function refresh(strict){
  try{const{list}=await load();all=list;
   const mt=textsOf(list).filter(x=>x.by==='invite'),mc=catsOf(list,'grivois','invite');
-  $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle catégorie</button></p>'+treeHtml({texts:mt,cats:mc,meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
+  $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle rubrique</button></p>'+treeHtml({texts:mt,cats:mc,scope:'lieu-invite',restTitle:'Sans rubrique',meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
   fillCats();
  }catch(e){if(strict)throw e;msg(bad(e))}}
 
-// Catégories : liste déroulante du formulaire (ses propres catégories seulement)
+// Rubriques : liste déroulante du formulaire (ses propres rubriques seulement)
 function fillCats(){const s=$('#catg');if(!s)return;const keep=s.value,src=catsOf(all,'grivois','invite');
- s.innerHTML='<option value="">Sans catégorie</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle catégorie…</option>';
+ s.innerHTML='<option value="">Sans rubrique</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
  s.value=[...s.options].some(o=>o.value===keep)?keep:''}
 $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
- const name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim()){s.value='';return}
+ const name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim()){s.value='';return}
  try{const{list,sha}=await load(),c=addCat(list,'grivois',name,'invite');await save(list,sha,'Mise a jour');all=list;fillCats();s.value=c.id}catch(e){s.value='';msg(bad(e))}};
 
 $('#date').value=today();
@@ -85,7 +84,7 @@ $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f
  upd();msg('Fichier importé. Relisez le texte avant de publier.')};
 
 async function send(draft){
- const cg=$('#catg').value==='__new'?'':$('#catg').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36);
+ const cg=$('#catg').value==='__new'?'':$('#catg').value,title=$('#title').value.trim()||(draft?'Sans titre':''),text=ED.text(),html=ED.html(),date=$('#date').value,id=editId||Date.now().toString(36),wasEdit=!!editId;
  if(!text)return msg('Il manque le texte.');
  if(!title)return msg('Il manque le titre.');
  const was=all.find(x=>x.id===id&&x.by==='invite');
@@ -94,7 +93,8 @@ async function send(draft){
  try{msg('Enregistrement en cours…');
   const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;{const lhv=ED.getLH();if(lhv)e.lh=lhv}
   const i=list.findIndex(x=>x.id===id&&x.by==='invite');placeText(list,e);i>=0?list[i]=e:list.push(e);
-  await save(list,sha,'Mise a jour');reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();return true;
+  await save(list,sha,'Mise a jour');openAt('lieu-invite',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();
+   if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=async()=>{if(await send(false))ED.exitFull()};
 $('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
@@ -105,16 +105,25 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
   if(a==='edit'){const t=all.find(x=>x.id===id&&x.by==='invite');if(!t)return;
    editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
    upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
-  let text=null,name=null;
-  if(a==='del'){if(!confirm('Supprimer ce texte définitivement ?'))return;text='Texte supprimé.'}
-  else if(a==='cnew'){name=prompt('Nom de la nouvelle catégorie :');if(!name||!name.trim())return;text='Catégorie créée.'}
-  else if(a==='cren'){const c=all.find(x=>x.id===id);name=prompt('Nouveau nom de la catégorie :',c?c.name:'');if(!name||!name.trim())return;text='Catégorie renommée.'}
-  else if(a==='cdel'){const c=all.find(x=>x.id===id);if(!confirm(`Supprimer la catégorie « ${c?c.name:''} » ? Ses textes passeront dans « Sans catégorie ».`))return;text='Catégorie supprimée.'}
+  let text=null,name=null,dest=null;
+  if(a==='del'){const t0=all.find(x=>x.id===id&&own(x));if(!t0)return;if(!await confirmBox('Supprimer définitivement « '+t0.title+' » ?','Supprimer'))return;text='Texte supprimé.'}
+  else if(a==='trub'){const t0=all.find(x=>x.id===id&&!isCat(x)&&own(x));if(!t0)return;
+   dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(all,'grivois','invite').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
+  else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
+  else if(a==='cren'){const c=all.find(x=>x.id===id);if(!own(c))return;name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
+  else if(a==='cdel'){const c=all.find(x=>x.id===id);if(!own(c))return;
+   const n=textsOf(all).filter(t=>t.cat===id&&own(t)).length;
+   if(n){dest=await chooseDest(c.name,n,catsOf(all,'grivois','invite').filter(x=>x.id!==id));if(!dest)return}
+   else if(!confirm(`Supprimer la rubrique « ${c.name} » ?`))return;
+   text='Rubrique supprimée.'}
   const{list,sha}=await load();let nl=list;const tg=list.find(x=>x.id===id);
   if(a==='del')nl=list.filter(x=>!(x.id===id&&x.by==='invite'));
   else if(a==='cnew')addCat(list,'grivois',name,'invite');
   else if(a==='cren'&&own(tg))renameCat(list,id,name);
-  else if(a==='cdel'&&own(tg))removeCat(list,id);
+  else if(a==='cdel'&&own(tg)){if(dest)moveTexts(list,id,dest,'grivois','invite');removeCat(list,id)}
+  else if(a==='trub'){const i=list.findIndex(x=>x.id===id&&!isCat(x)&&own(x));if(i<0)return msg('Texte introuvable.');
+   const tc=dest.mode==='new'?addCat(list,'grivois',dest.name,'invite'):dest.mode==='cat'?list.find(x=>x.id===dest.id&&isCat(x)&&own(x)):null;
+   const e={...list[i]};if(tc)e.cat=tc.id;else delete e.cat;placeText(list,e);list[i]=e;openAt('lieu-invite',tc?tc.id:null)}
   else if((a==='cup'||a==='cdown')&&own(tg))moveCat(list,id,a==='cup'?-1:1);
   else if((a==='tup'||a==='tdown')&&own(tg))moveText(list,id,a==='tup'?-1:1);
   await save(nl,sha,'Mise a jour');if(text)msg(text);refresh();
@@ -125,7 +134,7 @@ async function delOrClear(){
  if(editId){
   const t=all.find(x=>x.id===editId&&x.by==='invite');
   if(!await confirmBox('Supprimer définitivement « '+(t?t.title:'ce texte')+' » ?','Supprimer'))return;
-  try{const{list,sha}=await load();await save(list.filter(x=>!(x.id===editId&&x.by==='invite')),sha,'Mise a jour');reset();msg('Texte supprimé.');refresh();ED.exitFull()}catch(e){msg(bad(e))}
+  try{const{list,sha}=await load();await save(list.filter(x=>!(x.id===editId&&x.by==='invite')),sha,'Mise a jour');reset();msg('Texte supprimé.');refresh();ED.exitFull();view('list');scrollTo(0,0)}catch(e){msg(bad(e))}
  }else{
   if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
   reset();msg('Formulaire vidé.');ED.exitFull()}}

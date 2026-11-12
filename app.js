@@ -61,14 +61,14 @@ function home(){
  if(lieuOnly){main.innerHTML='<p style="text-align:center;margin:3rem 0"><button class="ghost" id="reopen" type="button">Saisir le mot de passe du lieu</button></p>';$('#reopen').onclick=openDoor;return}
  main.innerHTML='<input type="search" id="q" placeholder="Rechercher un texte…" aria-label="Rechercher un texte" autocomplete="off" style="margin-bottom:1.2rem"><div id="res"></div><div id="cats">'+rubHtml()+'</div>';
  $('#q').oninput=e=>{const q=nrm(e.target.value.trim());$('#cats').hidden=!!q;
-  const r=q?texts.filter(t=>{const v=plain[t.id]||t;return t.category!=='grivois'&&v.title&&nrm(v.title+' '+v.body).includes(q)}):[];
+  const r=q?texts.filter(t=>{const v=plain[t.id]||t;return t.category!=='grivois'&&v.title&&nrm(v.title+' '+v.body).includes(q)}).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))):[];
   $('#res').innerHTML=q?(r.length?list(r,true):'<p class="empty">Aucun résultat.</p>'):''}}
 
 function cat(c){
  if(c==='grivois'){
   const mine=sortD(lieu.filter(x=>x.by!=='invite')),his=sortD(lieu.filter(x=>x.by==='invite'));
   const cp=innerWidth<=900;
-  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),(a,b)=>(b.date||'').localeCompare(a.date||''),'lieu-moi'):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),(a,b)=>(b.date||'').localeCompare(a.date||''),'lieu-invite'):'')+'</section></div>';return}
+  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),byOrder,'lieu-moi'):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section><section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),byOrder,'lieu-invite'):'')+'</section></div>';return}
  main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+(of(c).length?grouped(of(c),catsOf(mcats,c),(a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1),c):'<p class="empty">Rien ici pour l’instant.</p>');
 }
 
