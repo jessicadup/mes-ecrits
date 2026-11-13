@@ -46,7 +46,7 @@ function view(v){
  if(v==='list')refresh();
 }
 $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
- if(b.dataset.v==='new'&&editId)reset();
+ if(b.dataset.v==='new'&&(editId||DU.on()))reset();
  msg('');view(b.dataset.v)};
 
 // Il ne voit et ne modifie que les textes qu'il a lui-même écrits (by:'invite')
@@ -54,6 +54,7 @@ async function refresh(strict){
  try{const{list}=await load();all=list;
   const mt=textsOf(list).filter(x=>x.by==='invite'),mc=catsOf(list,'grivois','invite');
   $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle rubrique</button></p>'+treeHtml({texts:mt,cats:mc,scope:'lieu-invite',restTitle:'Sans rubrique',meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
+  {const dh=duoHtml({texts:textsOf(list),who:'invite'});if(dh)$('#list').insertAdjacentHTML('beforeend','<div style="margin-top:1.2rem">'+dh+'</div>')}
   fillCats();
  }catch(e){if(strict)throw e;msg(bad(e))}}
 
@@ -68,7 +69,7 @@ $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
 $('#date').value=today();
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
-function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();ED.resetLH();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
+function reset(){editId=null;['title','file'].forEach(k=>$('#'+k).value='');ED.clear();ED.resetLH();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';DU.reset();upd()}
 $('#del').onclick=()=>delOrClear();
 
 $('#file').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const n=f.name.toLowerCase();let h='';
@@ -96,19 +97,21 @@ async function send(draft){
   await save(list,sha,'Mise a jour');openAt('lieu-invite',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();
    if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
-$('#pub').onclick=async()=>{if(await send(false))ED.exitFull()};
-$('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
+$('#pub').onclick=async()=>{if(DU.on()){if(await DU.send()){reset();msg('Publié.');ED.exitFull();view('list');scrollTo(0,0)}return}if(await send(false))ED.exitFull()};
+$('#draft').onclick=async()=>{if(DU.on())return;if(await send(true))ED.exitFull()};
 
 $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
- const a=b.dataset.a,id=b.dataset.id,own=x=>!!x&&ownerOf(x)==='invite';
+ const a=b.dataset.a,id=b.dataset.id,own=x=>!!x&&ownerOf(x)==='invite',ownT=x=>!!x&&!isCat(x)&&(ownerOf(x)==='invite'||isDuo(x));
+ if(a==='dcont'||a==='ddel'){await DU.act(a,id);return}
  try{
   if(a==='edit'){const t=all.find(x=>x.id===id&&x.by==='invite');if(!t)return;
-   editId=t.id;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
+   editId=t.id;DU.reset();$('#duorow').hidden=true;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
    upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
   let text=null,name=null,dest=null;
   if(a==='del'){const t0=all.find(x=>x.id===id&&own(x));if(!t0)return;if(!await confirmBox('Supprimer définitivement « '+t0.title+' » ?','Supprimer'))return;text='Texte supprimé.'}
   else if(a==='trub'){const t0=all.find(x=>x.id===id&&!isCat(x)&&own(x));if(!t0)return;
    dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(all,'grivois','invite').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
+  else if(a==='ttitle'){const t0=all.find(x=>x.id===id&&ownT(x));if(!t0)return;name=prompt('Nouveau titre :',t0.title);if(name==null||!name.trim())return;text='Titre modifié.'}
   else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
   else if(a==='cren'){const c=all.find(x=>x.id===id);if(!own(c))return;name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
   else if(a==='cdel'){const c=all.find(x=>x.id===id);if(!own(c))return;
@@ -118,6 +121,7 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
    text='Rubrique supprimée.'}
   const{list,sha}=await load();let nl=list;const tg=list.find(x=>x.id===id);
   if(a==='del')nl=list.filter(x=>!(x.id===id&&x.by==='invite'));
+  else if(a==='ttitle'){const t=list.find(x=>x.id===id&&ownT(x));if(!t)return msg('Texte introuvable.');t.title=name.trim()}
   else if(a==='cnew')addCat(list,'grivois',name,'invite');
   else if(a==='cren'&&own(tg))renameCat(list,id,name);
   else if(a==='cdel'&&own(tg)){if(dest)moveTexts(list,id,dest,'grivois','invite');removeCat(list,id)}
@@ -131,6 +135,7 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
 
 // Supprimer : texte en cours de modification -> suppression définitive (le sien) ; nouveau texte -> vide le formulaire
 async function delOrClear(){
+ if(DU.on()&&DU.pid()){await DU.delPart(DU.pid());return}
  if(editId){
   const t=all.find(x=>x.id===editId&&x.by==='invite');
   if(!await confirmBox('Supprimer définitivement « '+(t?t.title:'ce texte')+' » ?','Supprimer'))return;
@@ -138,3 +143,12 @@ async function delOrClear(){
  }else{
   if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
   reset();msg('Formulaire vidé.');ED.exitFull()}}
+
+// Écriture à deux voix (logique commune dans duo.js)
+const DU=makeDuo({who:'invite',ED,get:()=>all,bad,msg,upd,today,
+ reset:()=>reset(),view:v=>view(v),date:()=>$('#date').value||today(),
+ async ld(){return load()},
+ async sv(list,sha){await save(list,sha,'Mise a jour')},
+ done(list){all=list;refresh()},
+ page:S=>{$('#rowd').hidden=!!S.tid}});
+$('#duo').onchange=()=>DU.toggle();

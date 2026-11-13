@@ -69,6 +69,7 @@ function confirmBox(text,yes){return new Promise(res=>{
 .edwrap.fb{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;background:var(--bg,#f4f6f3);overflow:auto;padding:.8rem 1.2rem 1.2rem;box-sizing:border-box}
 .edwrap.is-full .ed{min-height:calc(100vh - 12rem)}
 body.ed-lock{overflow:hidden}
+.ed.v-moi,.ed.v-moi *{color:var(--vx-moi,#9a7515)!important}.ed.v-inv,.ed.v-inv *{color:var(--vx-inv,#566f8f)!important}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0 .5rem}
 .acts button{box-sizing:border-box;width:100%;height:2.9rem;margin:0;padding:0 .8rem;font:inherit;font-size:.95rem;line-height:1;border-radius:6px;cursor:pointer}
 .acts button#pub{background:var(--accent,#7a6a80);color:var(--on,#fff);border:1px solid var(--accent,#7a6a80)}
@@ -164,5 +165,5 @@ function initEditor(box,ph,opts){
  if(lsel){lsel.onchange=()=>{if(lsel.value==='x'){lsel.value=lh?'x':'';return}userLH(lsel.value===''?null:+lsel.value)};lrng.oninput=()=>userLH(+lrng.value)}
  setLH(remembered());
  return{getLH:()=>lh,setLH,resetLH:()=>setLH(remembered()),el:ed,html:()=>sanitize(ed.innerHTML),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h)},clear:()=>{ed.innerHTML=''},onInput:f=>ed.addEventListener('input',f),
-  isFull,exitFull:exit,notify:t=>{box.querySelector('.edmsg').textContent=t}};
+  isFull,exitFull:exit,setVoice:v=>{ed.classList.remove('v-moi','v-inv');if(v)ed.classList.add(v==='moi'?'v-moi':'v-inv');const cs=box.querySelector('[data-c=color]');if(cs)cs.hidden=!!v},notify:t=>{box.querySelector('.edmsg').textContent=t}};
 }

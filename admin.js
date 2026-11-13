@@ -39,7 +39,7 @@ function view(v){
  if(v==='list')refresh();
 }
 $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
- if(b.dataset.v==='new'&&editId)reset();
+ if(b.dataset.v==='new'&&(editId||DU.on()))reset();
  msg('');view(b.dataset.v)};
 
 // GitHub : chaque fichier est chiffré avant l'envoi (site : mot de passe du site ; lieu sûr : son propre mot de passe)
@@ -59,7 +59,7 @@ const meta=t=>{const n=t.n||(t.body!=null?cnt(t.body):null);return n?` · ${fr(n
 // Formulaire
 $('#date').value=today();
 $('#cat').onchange=()=>{$('#pwrow').hidden=$('#cat').value!=='grivois';fillCats()};
-function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();ED.resetLH();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';upd()}
+function reset(){editId=null;['title','pw','file'].forEach(k=>$('#'+k).value='');ED.clear();ED.resetLH();$('#catg').value='';$('#date').value=today();$('#pub').textContent='Publier';$('#ftitle').textContent='Nouveau texte';DU.reset();upd()}
 $('#del').onclick=()=>delOrClear();
 function upd(){const n=cnt(ED.text());$('#cnt').textContent=n.c?`${fr(n.c)} caractères · ${fr(n.w)} mots · ⏳ ${Math.max(1,Math.ceil(n.w/200))} min de lecture`:''}
 ED.onInput(upd);
@@ -98,8 +98,8 @@ async function send(draft){
   openAt(cat==='grivois'?'lieu-moi':'main',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
    if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
-$('#pub').onclick=async()=>{if(await send(false))ED.exitFull()};
-$('#draft').onclick=async()=>{if(await send(true))ED.exitFull()};
+$('#pub').onclick=async()=>{if(DU.on()){if(await DU.send()){reset();msg('Publié.');ED.exitFull();view('list');scrollTo(0,0)}return}if(await send(false))ED.exitFull()};
+$('#draft').onclick=async()=>{if(DU.on())return;if(await send(true))ED.exitFull()};
 
 // Mes textes (site principal)
 async function refresh(strict){
@@ -133,17 +133,19 @@ async function treeAction(ev,store){
  const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
  const a=b.dataset.a,id=b.dataset.id,L=store==='lieu',pw=L?LP:PW,src=()=>L?lcur:cur;
  const sec=L?'grivois':'main',after=async list=>{if(L){lcur=list;renderLieu()}else await refresh()};
+  if(a==='dcont'||a==='ddel'){await DU.act(a,id);return}
   if(b.dataset.by==='invite')return;
   {const tg=id&&src().find(x=>x.id===id);if(tg&&ownerOf(tg)==='invite')return}
   try{
   if(a==='edit'){const t=src().find(x=>x.id===id);if(!t)return;
-   editId=t.id;$('#cat').value=L?'grivois':'main';$('#cat').onchange();$('#date').value=t.date||today();
+   editId=t.id;DU.reset();$('#duorow').hidden=true;$('#cat').value=L?'grivois':'main';$('#cat').onchange();$('#date').value=t.date||today();
    $('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));if(L)$('#pw').value=LP;$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
    upd();$('#pub').textContent=t.draft?'Publier':'Enregistrer les modifications';msg('Modification en cours.');$('#ftitle').textContent='Modifier un texte';view('new');scrollTo(0,0);return}
   let text=null,name=null,dest=null;
   if(a==='del'){const t0=src().find(x=>x.id===id);if(!await confirmBox('Supprimer définitivement « '+(t0?t0.title:'ce texte')+' » ?','Supprimer'))return;text='Texte supprimé.'}
    else if(a==='trub'){const t0=src().find(x=>x.id===id);if(!t0)return;
     dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(src(),sec,'moi').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
+  else if(a==='ttitle'){const t0=src().find(x=>x.id===id&&!isCat(x));if(!t0)return;name=prompt('Nouveau titre :',t0.title);if(name==null||!name.trim())return;text='Titre modifié.'}
   else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
   else if(a==='cren'){const c=src().find(x=>x.id===id);name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
   else if(a==='cdel'){const c=src().find(x=>x.id===id);
@@ -153,6 +155,7 @@ async function treeAction(ev,store){
     text='Rubrique supprimée.'}
 const{list,sha}=await load(store,pw);let nl=list;
   if(a==='del')nl=list.filter(x=>x.id!==id);
+  else if(a==='ttitle'){const t=list.find(x=>x.id===id&&!isCat(x));if(!t)return msg('Texte introuvable.');t.title=name.trim()}
   else if(a==='cnew')addCat(list,b.dataset.sec,name,b.dataset.by);
   else if(a==='cren')renameCat(list,id,name);
   else if(a==='cdel'){if(dest)moveTexts(list,id,dest,sec);removeCat(list,id)}
@@ -167,7 +170,8 @@ const{list,sha}=await load(store,pw);let nl=list;
 // Le lieu sûr (fichier séparé, son propre mot de passe)
 function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  $('#llist').innerHTML='<h2 class="rh">Mes textes</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="moi">+ Nouvelle rubrique</button></p>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique'})
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique'})
+  +(vis.some(isDuo)?'<h2 class="rh">À quatre mains</h2>'+duoHtml({texts:vis,who:'moi'}):'')
   +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
   +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true});fillCats()}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
@@ -192,7 +196,7 @@ async function exportCat(x){
  const rn=t=>(catsOf(cur,'main').find(c=>c.id===t.cat)||{name:'Sans rubrique'}).name;
  let items=(x==='grivois'?[]:textsOf(cur).filter(t=>t.category!=='grivois')).map(t=>({...t,rub:rn(t)}));
  if(x==='grivois'||x==='all'){const p=prompt('Mot de passe du lieu sûr (laisser vide pour ignorer le lieu sûr) :');
-  if(p){try{const L=await load('lieu',p);items=items.concat(L.list.filter(t=>!isCat(t)).map(t=>({...t,category:'grivois'})))}catch(e){return msg(bad(e))}}}
+  if(p){try{const L=await load('lieu',p);items=items.concat(L.list.filter(t=>!isCat(t)).map(t=>({...t,category:'grivois',body:isDuo(t)?t.parts.map(p=>(p.by==='moi'?'[Moi] ':'[Invité] ')+p.body).join('\n\n'):t.body})))}catch(e){return msg(bad(e))}}}
  items.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
  if(!items.length)return msg('Rien à exporter.');
  const out=items.map(t=>`${t.category==='grivois'?CATN.grivois:(t.rub||CATN.main)} — ${t.title}\n${t.date||''}\n\n${t.body}`);
@@ -203,6 +207,7 @@ async function exportCat(x){
 
 // Supprimer : texte en cours de modification -> suppression définitive ; nouveau texte -> vide le formulaire
 async function delOrClear(){
+ if(DU.on()&&DU.pid()){await DU.delPart(DU.pid());return}
  const L=$('#cat').value==='grivois';
  if(editId){
   const t=(L?lcur:cur).find(x=>x.id===editId),pw=L?($('#pw').value||LP):PW;
@@ -214,3 +219,18 @@ async function delOrClear(){
  }else{
   if((ED.text()||$('#title').value.trim())&&!await confirmBox('Vider le formulaire ? Le texte saisi sera perdu.','Vider le formulaire'))return;
   reset();msg('Formulaire vidé.');ED.exitFull()}}
+
+// Écriture à deux voix (logique commune dans duo.js)
+let pc='main';
+const lp=()=>$('#pw').value||LP||'';
+const DU=makeDuo({who:'moi',ED,get:()=>lcur,bad,msg,upd,today,
+ reset:()=>reset(),view:v=>view(v),date:()=>$('#date').value||today(),
+ async ld(){const p=lp();if(p.length<10)throw new Error('Mot de passe du lieu sûr : 10 caractères minimum.');return load('lieu',p)},
+ async sv(list,sha){await save(list,sha,'Mise a jour','lieu',lp())},
+ done(list){LP=lp()||LP;lcur=list;renderLieu()},
+ page:S=>{const c=$('#cat');
+  if(S.on){if(!c.disabled)pc=c.value;c.value='grivois';c.disabled=true}else if(c.disabled){c.disabled=false;c.value=pc}
+  c.onchange();
+  if(S.on&&S.tid&&LP)$('#pwrow').hidden=true;
+  $('#rowpd').hidden=!!S.tid}});
+$('#duo').onchange=()=>DU.toggle();

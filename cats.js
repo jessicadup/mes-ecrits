@@ -64,6 +64,17 @@ const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 .ca .item.row>.bb button[disabled],.ca-t button[disabled]{opacity:.35;cursor:default}
 @media(max-width:560px){.ca .item.row{flex-direction:column;align-items:flex-start}.ca .item.row>.bb{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){.ca-b,.ca-a{transition:none}.ca-i{transition:none}}
+:root{--vx-moi:#9a7515;--vx-inv:#566f8f}
+@media(prefers-color-scheme:dark){:root{--vx-moi:#e6c876;--vx-inv:#a9bdd6}}
+body.envers{--vx-moi:#e6c876;--vx-inv:#a9bdd6}
+.vx{margin:0 0 1.1em;padding-left:.9rem;border-left:3px solid transparent}
+.vx>:last-child{margin-bottom:0}
+.vx-moi{border-left-color:var(--vx-moi)}.vx-inv{border-left-color:var(--vx-inv)}
+.vx-moi,.vx-moi *{color:var(--vx-moi)!important}
+.vx-inv,.vx-inv *{color:var(--vx-inv)!important}
+.vx-w{margin:0 0 .9rem}
+.vx-h{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:.85rem;margin:.6rem 0 .3rem}
+.vx-l{font-weight:600}.vx-l-moi{color:var(--vx-moi)}.vx-l-inv{color:var(--vx-inv)}
 `;document.head.appendChild(s)})();
 document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if(!h)return;
  const box=h.parentElement,o=!box.querySelector('.ca-b').classList.contains('open');
@@ -72,7 +83,7 @@ document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if
 // o:{texts,cats,meta,scope,restTitle,readonly}
 function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
- const row=(t,mv,first,last)=>`<div class="item row"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
+ const row=(t,mv,first,last)=>`<div class="item row"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
  const acc=(key,name,n,tools,inner)=>{const op=CAOPEN===key;
   return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${E(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
  let h='';
@@ -112,3 +123,26 @@ function moveTexts(list,from,dest,sec,by){
  openAt(sec==='grivois'?(by==='invite'?'lieu-invite':'lieu-moi'):'main',target?target.id:null);
  list.filter(t=>!isCat(t)&&t.cat===from).sort(byOrder).forEach(t=>{if(target){t.cat=target.id;t.ord=1e9}else{delete t.cat;delete t.ord}});
  if(target)list.filter(t=>!isCat(t)&&t.cat===target.id).sort(byOrder).forEach((t,k)=>t.ord=k+1)}
+
+// --- Écriture à deux voix : texte composé de passages, chacun écrit par « moi » (la propriétaire) ou « invite » ---
+// Entrée : {id,date,title,by:'duo',duo:true,cat:DUO_ID,parts:[{id,by:'moi'|'invite',date,html,body,lh}],body,n} ; rubrique commune « À quatre mains » (by:'duo')
+const DUO_ID='rub-quatre-mains';
+const isDuo=x=>!!x&&!isCat(x)&&x.duo===true;
+function duoCat(list){let c=list.find(x=>x.id===DUO_ID&&isCat(x));
+ if(!c){c={id:DUO_ID,kind:'cat',section:'grivois',name:'À quatre mains',order:0,by:'duo'};list.push(c)}return c}
+function duoCalc(t){t.body=t.parts.map(p=>p.body).join('\n\n');t.n={c:t.body.length,w:(t.body.trim().match(/\S+/g)||[]).length}}
+const vxc=b=>b==='moi'?'moi':'inv';
+const vxlh=p=>{const v=+p.lh;return v>=1&&v<=3?` style="line-height:${v}"`:''};
+// lecture : passages dans leurs deux couleurs
+function duoView(t){return(t.parts||[]).map(p=>`<div class="vx vx-${vxc(p.by)}"${vxlh(p)}>${p.html?sanitize(p.html):plainToHtml(p.body)}</div>`).join('')}
+// page d'édition : passages déjà écrits ; boutons seulement sur les passages de celui qui écrit (who)
+function duoRecap(t,who){const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ return t.parts.map(p=>{const mine=p.by===who,c=vxc(p.by);
+  return `<div class="vx-w"><div class="vx-h"><span class="vx-l vx-l-${c}">${mine?'Vous':'L’autre'}</span>${mine?`<button class="ghost" type="button" data-a="pedit" data-p="${E(p.id)}">Modifier ce passage</button><button class="ghost" type="button" data-a="pdel" data-p="${E(p.id)}">Supprimer ce passage</button>`:''}</div><div class="vx vx-${c}"${vxlh(p)}>${sanitize(p.html||plainToHtml(p.body))}</div></div>`}).join('')}
+// consultation : une rubrique « À quatre mains » en accordéon (o:{texts,who}) ; vide si aucun texte à deux voix
+function duoHtml(o){const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const items=o.texts.filter(isDuo).sort(byOrder);if(!items.length)return'';
+ const key='duo:quatre',op=CAOPEN===key,n=items.length;
+ const row=t=>{const own=t.parts.some(p=>p.by===o.who),np=t.parts.length,w=t.n?t.n.w:0;
+  return `<div class="item row"><div><b>${E(t.title)}</b><span>${E(t.date||'')} · ${np} passage${np>1?'s':''} · ${w.toLocaleString('fr-FR')} mot${w>1?'s':''}</span></div><div class="bb"><button class="ghost" data-a="dcont" data-id="${t.id}">Continuer</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button>${own?`<button class="ghost" data-a="ddel" data-id="${t.id}">Supprimer</button>`:''}</div></div>`};
+ return `<div class="cons"><div class="ca" data-k="${key}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">À quatre mains</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${items.map(row).join('')}</div></div></div></div>`}
