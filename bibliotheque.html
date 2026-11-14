@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="referrer" content="no-referrer"><title>La bibliothèque</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#8a5a2b;--on:#fff;--bg:#fbf3e1;--ink:#3a2a1a;--serif:'Cormorant Garamond',Georgia,serif;--card:#fbf3e1;--line:#d8c7a3;--soft:#7a6650}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding-bottom:9rem;color:#f3e7cf;font:17px/1.6 'Nunito Sans',system-ui,sans-serif;background:radial-gradient(ellipse 40rem 30rem at 12% 0,rgba(255,214,140,.28),transparent 70%),repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 2px,transparent 2px 9px),linear-gradient(#3a2415,#5a3a20)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #ffd98a;outline-offset:2px}
+header.top{max-width:60rem;margin:0 auto;padding:2rem 1.2rem 0;text-align:center}
+header.top a{color:#d9c08a;text-decoration:none;font-size:.9rem}
+h1{font:italic 400 clamp(2.2rem,6vw,3.4rem)/1.1 var(--serif);margin:.4rem 0 1.5rem;color:#ffe6b0}
+#shelves{max-width:60rem;margin:0 auto;padding:0 1rem}
+.shelf{margin:0 0 1.6rem;background:linear-gradient(#2a190d,#33200f);border-radius:4px 4px 0 0;box-shadow:inset 0 10px 18px rgba(0,0,0,.45)}
+.row-b{display:flex;align-items:flex-end;gap:3px;padding:.9rem 1rem 0;min-height:11rem;overflow-x:auto;border-bottom:14px solid #8a5a30;box-shadow:0 10px 12px -6px rgba(0,0,0,.6)}
+.spine{flex:none;display:flex;align-items:center;justify-content:center;padding:6px 0;border:0;border-radius:3px 3px 1px 1px;color:#f6e7c4;box-shadow:inset 3px 0 4px rgba(255,255,255,.18),inset -3px 0 5px rgba(0,0,0,.35);border-top:4px double rgba(255,225,160,.5);transition:transform .25s,opacity .3s,filter .3s}
+.spine span{writing-mode:vertical-rl;font:500 1.05rem/1 var(--serif);max-height:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.spine:hover{transform:translateY(-8px)}
+.spine.hit{filter:drop-shadow(0 0 8px #ffd66e) brightness(1.25);transform:translateY(-8px)}.spine.dim{opacity:.35}
+.dec{flex:none;margin-left:auto;font-size:2.6rem;line-height:1;padding:0 .4rem;filter:drop-shadow(0 4px 3px rgba(0,0,0,.5))}
+.empty{color:#d9c08a;font-style:italic;text-align:center}
+#veil{position:fixed;inset:0 0 7.5rem 0;z-index:10;display:flex;align-items:center;justify-content:center;padding:.8rem;background:rgba(20,10,4,.6)}
+#veil[hidden]{display:none}
+#book{width:min(62rem,100%);max-height:100%;overflow:auto;padding:1.4rem 2rem 1.8rem;color:var(--ink);background:linear-gradient(90deg,#f3e6c8,#fbf3e1 48%,#e9d8b2 50%,#fbf3e1 52%,#f3e6c8);border-radius:6px;box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 8px #5e3a1e;transition:none}
+.bh{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+#bt{font:500 clamp(1.6rem,4vw,2.3rem)/1.2 var(--serif);margin:0}
+#bx{background:none;border:0;font-size:1.3rem;color:var(--soft)}
+#bact{display:flex;flex-wrap:wrap;gap:.5rem}#bact[hidden]{display:none}
+#pages{column-count:2;column-gap:3.5rem;margin-top:1rem;font:1.08rem/1.7 var(--serif)}
+.fc{break-inside:avoid;margin:0 0 1.3rem;padding-bottom:.8rem;border-bottom:1px dotted var(--line)}
+.ft{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem}.ft b{font:600 1.3rem var(--serif)}
+.tag{font-size:.78rem;color:var(--accent);border:1px solid var(--accent);border-radius:9px;padding:0 .5rem}
+.fx p{margin:.3rem 0}.bk{font-size:.85rem;color:var(--soft);margin:.1rem 0}
+.fc.flash{animation:fl 2s}@keyframes fl{from{background:#ffe9a8}to{background:none}}
+.fa{display:flex;gap:.4rem;margin:.4rem 0 0}
+#book button:not(.ed button){background:var(--accent);color:#fff;border:0;border-radius:6px;padding:.45rem .9rem;font-size:.9rem}
+#book button.ghost,.fa button,#bact .ghost{background:none!important;color:var(--soft)!important;border:1px solid var(--line)!important}
+#form{margin:1rem 0;padding:1rem;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.4)}#form[hidden]{display:none}
+#ftit,#fty{width:100%;margin:0 0 .6rem;padding:.6rem .8rem;border:1px solid #c9b48a;border-radius:6px;background:#fff;color:var(--ink);font:inherit}
+#book .ed,#book .rib select,#book .rib button,#book .lhr{background:#fff!important;color:#3a2a1a!important;border-color:#c9b48a!important}
+#book .rib button[aria-pressed=true]{background:var(--accent)!important;color:#fff!important}
+#desk{position:fixed;left:0;right:0;bottom:0;height:7.5rem;z-index:20;display:flex;align-items:center;justify-content:space-around;gap:1rem;padding:0 1rem;background:repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 2px,transparent 2px 11px),linear-gradient(#8a5a30,#6a4222);border-top:6px solid #a8743e;box-shadow:0 -8px 20px rgba(0,0,0,.5)}
+#desk .tool{background:none;border:0;font-size:3rem;line-height:1;filter:drop-shadow(0 5px 4px rgba(0,0,0,.5));transition:transform .25s}
+#desk .tool:hover,#desk .tool[aria-pressed=true]{transform:rotate(-12deg) translateY(-6px)}
+#lensbox{display:flex;align-items:center;gap:.5rem;flex:1;max-width:24rem}
+#sq{flex:1;min-width:0;padding:.6rem .9rem;border:2px solid #d9b873;border-radius:20px;background:#fbf3e1;color:var(--ink);font:inherit}#sq[hidden]{display:none}
+.cup{position:relative;display:flex;align-items:flex-end;gap:.2rem}
+.cup:after{content:"";position:absolute;right:0;bottom:-6px;width:2.6rem;height:2.4rem;border-radius:0 0 .8rem .8rem;background:linear-gradient(90deg,#3a2415,#6b4423);z-index:-1}
+.cup .ink{font-size:2rem;margin-right:.3rem}
+#toast{position:fixed;left:50%;bottom:8.5rem;transform:translateX(-50%);max-width:92vw;margin:0;padding:.6rem 1rem;border-radius:8px;background:#2b1a0e;color:#ffe6b0;z-index:2200;box-shadow:0 4px 14px rgba(0,0,0,.4)}#toast[hidden]{display:none}
+.dlg button{padding:.6rem 1.1rem;border-radius:6px;border:1px solid #aeb8ad;background:var(--accent);color:#fff}.dlg button.ghost{background:none;color:var(--ink)}.dlg input{width:100%;padding:.6rem;margin:.5rem 0}.row{display:flex;gap:.6rem;justify-content:center}
+@media(max-width:760px){#pages{column-count:1}#book{padding:1rem}.row-b{min-height:9.5rem}#desk .tool{font-size:2.4rem}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<header class="top"><a href="index.html">← Mots après maux</a><h1>La bibliothèque</h1></header>
+<main id="shelves"></main>
+<div id="veil" hidden><section id="book" role="dialog" aria-modal="true" aria-labelledby="bt">
+ <div class="bh"><h2 id="bt"></h2><button id="bx" type="button" aria-label="Refermer le livre">✕</button></div>
+ <p id="bact" hidden></p>
+ <div id="form" hidden><input id="ftit" placeholder="Le mot ou le titre de la fiche" aria-label="Titre de la fiche"><select id="fty" aria-label="Type de fiche"></select><div id="edbox"></div>
+  <p><button id="fsave" type="button">Enregistrer la fiche</button> <button id="fcancel" class="ghost" type="button">Annuler</button></p></div>
+ <div id="pages"></div></section></div>
+<div id="desk"><div id="lensbox"><button id="lens" class="tool" type="button" aria-label="Prendre la loupe pour chercher" aria-pressed="false">🔍</button><input id="sq" type="search" hidden placeholder="Chercher un mot…" aria-label="Chercher dans la bibliothèque" autocomplete="off"></div>
+ <div class="cup"><span class="ink" aria-hidden="true">🫙</span><button id="pen" class="tool" type="button" aria-label="Prendre la plume pour écrire" aria-pressed="false">🪶</button></div></div>
+<p id="toast" role="status" hidden></p>
+<script src="config.js?v=20261114a"></script><script src="crypto.js?v=20261114a"></script><script src="rich.js?v=20261114a"></script><script src="biblio.js?v=20261114a"></script>
+</body></html>
