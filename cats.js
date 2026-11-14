@@ -32,8 +32,9 @@ function moveCat(list,id,dir){const c=list.find(x=>x.id===id&&isCat(x));if(!c)re
  const sib=catsOf(list,c.section,ownerOf(c)),i=sib.indexOf(c),j=i+dir;if(j<0||j>=sib.length)return;
  [sib[i],sib[j]]=[sib[j],sib[i]];sib.forEach((x,k)=>x.order=k+1)}
 function moveText(list,id,dir){const t=list.find(x=>x.id===id&&!isCat(x));if(!t||!t.cat)return;
- const sib=siblings(t,list),i=sib.indexOf(t),j=i+dir;if(j<0||j>=sib.length)return;
- [sib[i],sib[j]]=[sib[j],sib[i]];sib.forEach((x,k)=>x.ord=k+1)}
+ // on se déplace parmi les textes de même état (publiés entre eux, brouillons entre eux)
+ const all=siblings(t,list),sib=all.filter(x=>!!x.draft===!!t.draft),i=sib.indexOf(t),j=i+dir;if(j<0||j>=sib.length)return;
+ all.forEach((x,k)=>x.ord=k+1);const o=sib[i].ord;sib[i].ord=sib[j].ord;sib[j].ord=o}
 // place un texte dans une catégorie : à la fin s'il est nouveau ou change de catégorie, sinon il garde sa place
 function placeText(list,e){
  if(!e.cat){delete e.cat;delete e.ord;return}
@@ -64,6 +65,13 @@ const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 .ca .item.row>.bb button[disabled],.ca-t button[disabled]{opacity:.35;cursor:default}
 @media(max-width:560px){.ca .item.row{flex-direction:column;align-items:flex-start}.ca .item.row>.bb{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){.ca-b,.ca-a{transition:none}.ca-i{transition:none}}
+.ca-d{font-size:.8rem;color:var(--accent,#7a6a80);border:1px solid var(--accent,#7a6a80);border-radius:9px;padding:0 .5rem;white-space:nowrap}
+.ca-sum{margin:0 0 .8rem;padding:.55rem .9rem;border-left:4px solid var(--accent,#7a6a80);background:rgba(122,106,128,.14);border-radius:0 6px 6px 0;font-size:.92rem}
+.ca-st{margin:.9rem 0 .2rem;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--soft,#6f7780)}
+.ca-dr{margin:.5rem 0;padding:.1rem .8rem .3rem;border:1px dashed var(--accent,#7a6a80);border-radius:8px;background:rgba(122,106,128,.12)}
+.ca-dr .ca-st{margin-top:.6rem;color:var(--accent,#7a6a80)}
+.ca .item.is-draft b:before{content:"✎ ";color:var(--accent,#7a6a80)}
+.nbd{margin-left:.5rem;font-size:.8rem;color:var(--accent,#7a6a80);border:1px solid var(--accent,#7a6a80);border-radius:9px;padding:0 .45rem}
 :root{--vx-moi:#9a7515;--vx-inv:#566f8f}
 @media(prefers-color-scheme:dark){:root{--vx-moi:#e6c876;--vx-inv:#a9bdd6}}
 body.envers{--vx-moi:#e6c876;--vx-inv:#a9bdd6}
@@ -83,13 +91,19 @@ document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if
 // o:{texts,cats,meta,scope,restTitle,readonly}
 function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
- const row=(t,mv,first,last)=>`<div class="item row"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
- const acc=(key,name,n,tools,inner)=>{const op=CAOPEN===key;
-  return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${E(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
- let h='';
+ const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
+ const acc=(key,name,n,tools,inner,dn)=>{const op=CAOPEN===key;
+  return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${E(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span>${dn?`<span class="ca-d">✎ ${dn} brouillon${dn>1?'s':''}</span>`:''}</button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
+ // brouillons d'abord (section à part), puis textes publiés ; les flèches ne concernent que les publiés
+ const body=(items,mv)=>{const dr=items.filter(t=>t.draft),pb=items.filter(t=>!t.draft);let r='';
+  if(dr.length)r+=`<div class="ca-dr"><p class="ca-st">✎ Brouillons (${dr.length})</p>${dr.map(t=>row(t,false)).join('')}</div>`;
+  if(dr.length&&pb.length)r+=`<p class="ca-st">Publiés (${pb.length})</p>`;
+  return r+pb.map((t,j)=>row(t,mv,j===0,j===pb.length-1)).join('')};
+ const nd=o.texts.filter(t=>t.draft).length;
+ let h=!ro&&nd?`<p class="ca-sum">✎ ${nd} brouillon${nd>1?'s':''} à terminer</p>`:'';
  g.forEach((x,i)=>{const tools=ro?'':`<div class="ca-t"><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer la rubrique</button></div>`;
-  h+=acc(sc+':'+x.cat.id,x.cat.name,x.items.length,tools,x.items.map((t,j)=>row(t,true,j===0,j===x.items.length-1)).join(''))});
- if(rest.length)h+=acc(sc+':none',o.restTitle||'Sans rubrique',rest.length,'',[...rest].sort(byOrder).map(t=>row(t,false)).join(''));
+  h+=acc(sc+':'+x.cat.id,x.cat.name,x.items.length,tools,body(x.items,true),x.items.filter(t=>t.draft).length)});
+ if(rest.length)h+=acc(sc+':none',o.restTitle||'Sans rubrique',rest.length,'',body([...rest].sort(byOrder),false),rest.filter(t=>t.draft).length);
  return `<div class="cons">${h||'<p class="empty">Aucun texte pour l’instant.</p>'}</div>`}
 
 // Choix d'une rubrique d'arrivée (suppression d'une rubrique, ou bouton « Rubrique » d'un texte)
@@ -146,3 +160,7 @@ function duoHtml(o){const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':
  const row=t=>{const own=t.parts.some(p=>p.by===o.who),np=t.parts.length,w=t.n?t.n.w:0;
   return `<div class="item row"><div><b>${E(t.title)}</b><span>${E(t.date||'')} · ${np} passage${np>1?'s':''} · ${w.toLocaleString('fr-FR')} mot${w>1?'s':''}</span></div><div class="bb"><button class="ghost" data-a="dcont" data-id="${t.id}">Continuer</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button>${own?`<button class="ghost" data-a="ddel" data-id="${t.id}">Supprimer</button>`:''}</div></div>`};
  return `<div class="cons"><div class="ca" data-k="${key}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">À quatre mains</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${items.map(row).join('')}</div></div></div></div>`}
+
+// Pastille « ✎ n » sur le bouton « Consultation des textes » : brouillons en attente
+function draftBadge(n){const b=document.querySelector('.menu button[data-v=list]');if(!b)return;
+ b.innerHTML='Consultation des textes'+(n?' <span class="nbd">✎ '+n+'</span>':'')}

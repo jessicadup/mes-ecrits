@@ -35,13 +35,13 @@ $('#unlock').onclick=async()=>{
  PW=p;m('Connexion…');
  try{await refresh(true);
   if(!S.tok){const c=cfg();localStorage.setItem('cfgL',JSON.stringify({owner:c.o,repo2:c.r,tok:await lock({t:TOK},p)}))}
-  $('#gate').hidden=true;$('#app').hidden=false;
+  $('#gate').hidden=true;$('#app').hidden=false;$('#lock').hidden=false;document.body.classList.add('has-lock');
  }catch(e){PW=null;m(bad(e))}};
 
 
 // Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
 function view(v){
- $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;document.body.classList.add('has-lock');
  document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='list')refresh();
 }
@@ -55,7 +55,7 @@ async function refresh(strict){
   const mt=textsOf(list).filter(x=>x.by==='invite'),mc=catsOf(list,'grivois','invite');
   $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle rubrique</button></p>'+treeHtml({texts:mt,cats:mc,scope:'lieu-invite',restTitle:'Sans rubrique',meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
   {const dh=duoHtml({texts:textsOf(list),who:'invite'});if(dh)$('#list').insertAdjacentHTML('beforeend','<div style="margin-top:1.2rem">'+dh+'</div>')}
-  fillCats();
+  fillCats();draftBadge(mt.filter(t=>t.draft).length);
  }catch(e){if(strict)throw e;msg(bad(e))}}
 
 // Rubriques : liste déroulante du formulaire (ses propres rubriques seulement)

@@ -40,6 +40,7 @@ h1{font:italic 400 clamp(2.2rem,6vw,3.4rem)/1.1 var(--serif);margin:.4rem 0 1.5r
 #ftit,#fty{width:100%;margin:0 0 .6rem;padding:.6rem .8rem;border:1px solid #c9b48a;border-radius:6px;background:#fff;color:var(--ink);font:inherit}
 #book .ed,#book .rib select,#book .rib button,#book .lhr{background:#fff!important;color:#3a2a1a!important;border-color:#c9b48a!important}
 #book .rib button[aria-pressed=true]{background:var(--accent)!important;color:#fff!important}
+#book .tbar{background:#fff!important;border-color:#c9b48a!important}#book .tbar button{background:none!important;color:#3a2a1a!important;padding:0!important}#book .tbar button[aria-pressed=true]{background:var(--accent)!important;color:#fff!important}
 #desk{position:fixed;left:0;right:0;bottom:0;height:7.5rem;z-index:20;display:flex;align-items:center;justify-content:space-around;gap:1rem;padding:0 1rem;background:repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 2px,transparent 2px 11px),linear-gradient(#8a5a30,#6a4222);border-top:6px solid #a8743e;box-shadow:0 -8px 20px rgba(0,0,0,.5)}
 #desk .tool{background:none;border:0;font-size:3rem;line-height:1;filter:drop-shadow(0 5px 4px rgba(0,0,0,.5));transition:transform .25s}
 #desk .tool:hover,#desk .tool[aria-pressed=true]{transform:rotate(-12deg) translateY(-6px)}
@@ -64,5 +65,5 @@ h1{font:italic 400 clamp(2.2rem,6vw,3.4rem)/1.1 var(--serif);margin:.4rem 0 1.5r
 <div id="desk"><div id="lensbox"><button id="lens" class="tool" type="button" aria-label="Prendre la loupe pour chercher" aria-pressed="false">🔍</button><input id="sq" type="search" hidden placeholder="Chercher un mot…" aria-label="Chercher dans la bibliothèque" autocomplete="off"></div>
  <div class="cup"><span class="ink" aria-hidden="true">🫙</span><button id="pen" class="tool" type="button" aria-label="Prendre la plume pour écrire" aria-pressed="false">🪶</button></div></div>
 <p id="toast" role="status" hidden></p>
-<script src="config.js?v=20261114a"></script><script src="crypto.js?v=20261114a"></script><script src="rich.js?v=20261114a"></script><script src="biblio.js?v=20261114a"></script>
+<script src="config.js?v=20261114b"></script><script src="crypto.js?v=20261114b"></script><script src="rich.js?v=20261114b"></script><script src="biblio.js?v=20261114b"></script>
 </body></html>

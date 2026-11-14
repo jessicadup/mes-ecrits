@@ -49,14 +49,23 @@ function confirmBox(text,yes){return new Promise(res=>{
 .ed:empty:before{content:attr(data-ph);color:#8a929a}
 .ed p{margin:0 0 .9em}.ed ul,.ed ol{margin:0 0 .9em 1.4em;padding:0}
 .ed h2,.text h2{font-size:1.55em;font-weight:500;line-height:1.25;margin:.9em 0 .4em}.ed h3,.text h3{font-size:1.28em;font-weight:500;line-height:1.3;margin:.8em 0 .35em}
-.ribs{display:block}
+.tbar{display:flex;align-items:center;gap:.15rem;margin:.5rem 0 0;padding:.35rem .5rem;border:1px solid var(--line,#dde2dc);border-radius:14px;background:var(--card,#fbfcfa);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tbar::-webkit-scrollbar{display:none}
+.tbar button,.tsel{position:relative;flex:none;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:2.5rem;height:2.5rem;margin:0;padding:0;border:0;border-radius:8px;background:none;color:var(--ink,#3a3f46);font:inherit;font-size:1.05rem;line-height:1;cursor:pointer}
+.tbar button:hover,.tsel:hover{background:rgba(122,106,128,.18)}
+.tbar button[aria-pressed=true]{background:var(--accent,#7a6a80);color:var(--on,#fff)}
+.tbar svg{width:1.3rem;height:1.3rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.tbar .gl{font:600 1.1rem Georgia,serif;pointer-events:none}
+.tbar .sep{flex:none;width:1px;height:1.5rem;margin:0 .35rem;background:var(--line,#dde2dc)}
+.tsel select{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;margin:0;font-size:16px}
+.tsel:focus-within,.tbar button:focus-visible{outline:2px solid var(--accent,#7a6a80)}
 .rib{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;margin:.5rem 0 0}
 .rib select,.rib button{box-sizing:border-box;width:100%;height:2.6rem;margin:0;padding:0 .6rem;font:inherit;font-size:.92rem;line-height:1;color:var(--ink,#3a3f46);background:#fff;border:1px solid #aeb8ad;border-radius:6px;cursor:pointer;text-align:center}
 @media(prefers-color-scheme:dark){.rib select,.rib button{background:#2b3236;border-color:#5a646b}}
 .rib button:hover,.rib select:hover{border-color:var(--accent,#7a6a80)}
 .rib button[aria-pressed=true]{background:var(--accent,#7a6a80);color:var(--on,#fff);border-color:var(--accent,#7a6a80)}
-.stick{position:sticky;top:0;z-index:20;background:var(--bg,#f4f6f3);padding:.1rem 0 .3rem;box-shadow:0 7px 8px -7px rgba(0,0,0,.3)}
-.edhead{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.45rem 0 0}
+.stick{position:sticky;top:var(--stick-top,0px);z-index:20;background:var(--bg,#f4f6f3);padding:.1rem 0 .3rem;box-shadow:0 7px 8px -7px rgba(0,0,0,.3)}
+.edhead{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.45rem 0 0}
 .edbtns{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .linkbtn{background:none;border:0;padding:0;font:inherit;font-size:.8rem;color:var(--soft,#6f7780);text-decoration:underline;cursor:pointer}
 .fsbtn{box-sizing:border-box;height:2.2rem;margin:0;padding:0 .9rem;font:inherit;font-size:.85rem;line-height:1;color:var(--ink,#3a3f46);background:none;border:1px solid #aeb8ad;border-radius:6px;cursor:pointer}
@@ -69,6 +78,7 @@ function confirmBox(text,yes){return new Promise(res=>{
 .edwrap.fb{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;background:var(--bg,#f4f6f3);overflow:auto;padding:.8rem 1.2rem 1.2rem;box-sizing:border-box}
 .edwrap.is-full .ed{min-height:calc(100vh - 12rem)}
 body.ed-lock{overflow:hidden}
+.edwrap.is-full .stick{top:0}
 .ed.v-moi,.ed.v-moi *{color:var(--vx-moi,#9a7515)!important}.ed.v-inv,.ed.v-inv *{color:var(--vx-inv,#566f8f)!important}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0 .5rem}
 .acts button{box-sizing:border-box;width:100%;height:2.9rem;margin:0;padding:0 .8rem;font:inherit;font-size:.95rem;line-height:1;border-radius:6px;cursor:pointer}
@@ -81,27 +91,37 @@ body.ed-lock{overflow:hidden}
 .dlg>div{width:min(26rem,90vw);padding:1.6rem;background:var(--card,#fff);border:1px solid var(--line,#dde2dc);border-radius:10px;text-align:center;color:var(--ink,#3a3f46)}
 @media(max-width:700px){.ribs{display:flex;gap:.4rem;overflow-x:auto;padding:.4rem 0 .3rem;-webkit-overflow-scrolling:touch}.ribs .rib{display:contents}.ribs .rib>*{flex:0 0 auto;width:auto;min-width:6.4rem}.ribs .rib select{min-width:6.8rem}.acts{grid-template-columns:1fr}.edwrap.fb,.edwrap:fullscreen{padding:.6rem .7rem 1rem}}
 
-.rib3{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr)}
+.rib3{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.5fr) minmax(0,1.5fr) minmax(0,1fr)}
 .lhr{display:flex;align-items:center;gap:.5rem;box-sizing:border-box;height:2.6rem;margin:0;padding:0 .6rem;border:1px solid #aeb8ad;border-radius:6px;background:#fff;font-size:.85rem;color:var(--ink,#3a3f46)}
 @media(prefers-color-scheme:dark){.lhr{background:#2b3236;border-color:#5a646b}}
 .lhr input{flex:1;min-width:0;width:auto;height:auto;padding:0;margin:0;border:0;background:none;accent-color:var(--accent,#7a6a80)}
 .lhr output{min-width:2rem;text-align:right}
-.rib button.primary{background:var(--accent,#7a6a80);color:var(--on,#fff);border-color:var(--accent,#7a6a80)}
-.rib button.b-d{line-height:1.1;font-size:.82rem;white-space:normal}
-@media(max-width:700px){.rib3{display:flex;gap:.4rem;overflow-x:auto;padding:.1rem 0 .3rem;margin-top:.4rem;-webkit-overflow-scrolling:touch}.rib3>*{flex:0 0 auto;width:auto;min-width:6.4rem}.rib3 .b-d{order:1;min-width:8.5rem}.rib3 #pub{order:2}.rib3 .b-x{order:3}.rib3 select{order:4}.rib3 .lhr{order:5;min-width:11rem}}
+.rib button.primary{background:var(--accent,#7a6a80);color:var(--on,#fff);border-color:var(--accent,#7a6a80);line-height:1.1;font-size:.82rem;white-space:normal;padding:0 .4rem}
+.rib3 select{padding:0 .3rem;font-size:.85rem}
+.rib button.b-d{line-height:1.1;font-size:.82rem;white-space:normal;padding:0 .4rem}
+@media(max-width:700px){.rib3{display:flex;gap:.4rem;overflow-x:auto;padding:.1rem 0 .3rem;margin-top:.4rem;-webkit-overflow-scrolling:touch}.rib3>*{flex:0 0 auto;width:auto;min-width:6.4rem}.rib3 .b-d{order:1;min-width:8.5rem}.rib3 #pub{min-width:8.5rem}.rib3 #pub{order:2}.rib3 .b-x{order:3}.rib3 select{order:4}.rib3 .lhr{order:5;min-width:11rem}}
 `;document.head.appendChild(st)})();
 
 function initEditor(box,ph,opts){
  opts=opts&&typeof opts==='object'?opts:{};
  const opt=(a,f)=>a.map(([v,l])=>`<option value="${v}"${f?` style="${f(v)}"`:''}>${l}</option>`).join('');
- const size=`<select data-c="size" aria-label="Taille du texte"><option value="">Taille</option>${opt([['h2','Titre'],['h3','Sous-titre'],['p','Texte normal'],['.85','Petit'],['1.4','Grand'],['1.9','Très grand']])}</select>`;
- const font=`<select data-c="font" aria-label="Police"><option value="">Police</option>${opt(Object.keys(FONTS).map(k=>[k,k]),v=>'font-family:'+FONTS[v])}</select>`;
- const color=`<select data-c="color" aria-label="Couleur du texte"><option value="">Couleur</option>${opt([['#c9a24a','Doré'],['#d58a97','Rose'],['#7fae88','Vert sauge'],['#6c9bd1','Bleu ciel'],['#a08ab0','Violet'],['#e0806a','Corail'],['#8d949e','Gris']],v=>'color:'+v)}</select>`;
+ const selb=(c,label,icon,opts)=>`<label class="tsel" title="${label}">${icon}<select data-c="${c}" aria-label="${label}"><option value="">${label}</option>${opts}</select></label>`;
+ const IC={
+  size:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19 8 5l5.5 14M4.6 14h6.8"/><path d="M15.5 19l3-7.5 3 7.5M16.6 16.4h4.8"/></svg>',
+  font:'<span class="gl" aria-hidden="true">Aa</span>',
+  color:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15 12 3l6 12M8.3 10.5h7.4"/><path d="M4 20h16" stroke="#d58a97" stroke-width="3"/></svg>',
+  hl:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 5.5-5.5 4 4L13 16z"/><path d="M9 12l-3 3v3h4l3-2"/><path d="M4 21h10" stroke="#e8c53a" stroke-width="3"/></svg>',
+  ul:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg>',
+  ol:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><text x="2.5" y="8" font-size="6.5" fill="currentColor" stroke="none">1</text><text x="2.5" y="14" font-size="6.5" fill="currentColor" stroke="none">2</text><text x="2.5" y="20" font-size="6.5" fill="currentColor" stroke="none">3</text></svg>',
+  clr:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M12 5v8"/><path d="M5 20 19 10"/></svg>'};
+ const size=selb('size','Taille du texte',IC.size,opt([['h2','Titre'],['h3','Sous-titre'],['p','Texte normal'],['.85','Petit'],['1.4','Grand'],['1.9','Très grand']]));
+ const font=selb('font','Police',IC.font,opt(Object.keys(FONTS).map(k=>[k,k]),v=>'font-family:'+FONTS[v]));
+ const color=selb('color','Couleur du texte',IC.color,opt([['#c9a24a','Doré'],['#d58a97','Rose'],['#7fae88','Vert sauge'],['#6c9bd1','Bleu ciel'],['#a08ab0','Violet'],['#e0806a','Corail'],['#8d949e','Gris']],v=>'color:'+v));
+ const tb=(t,label,inner)=>`<button type="button" data-t="${t}" aria-pressed="false" title="${label}" aria-label="${label}">${inner}</button>`;
+ const bar=`<div class="tbar" role="toolbar" aria-label="Mise en forme du texte">${size}${font}${color}<i class="sep"></i>${tb('bold','Gras','<b>B</b>')}${tb('italic','Italique','<i>I</i>')}${tb('underline','Souligné','<u>U</u>')}${tb('hl','Surligné',IC.hl)}<i class="sep"></i>${tb('insertUnorderedList','Liste à puces',IC.ul)}${tb('insertOrderedList','Liste numérotée',IC.ol)}<i class="sep"></i><button type="button" data-b="removeFormat" title="Effacer la mise en forme" aria-label="Effacer la mise en forme">${IC.clr}</button></div>`;
  const rib3=opts.actions?`<div class="rib rib3" role="toolbar" aria-label="Interligne et actions"><select data-l="sel" aria-label="Interligne"><option value="">Interligne</option><option value="1.15">Simple</option><option value="1.5">1,5</option><option value="2">Double</option><option value="x" hidden>Personnalisé</option></select><label class="lhr"><input type="range" data-l="rng" min="1" max="3" step="0.1" value="1.7" aria-label="Interligne (curseur)"><output data-l="out">—</output></label><button type="button" id="draft" class="b-d" aria-label="Enregistrer comme brouillon">Enregistrer comme brouillon</button><button type="button" id="pub" class="primary">Publier</button><button type="button" id="del" class="b-x">Supprimer</button></div>`:'';
- const list=`<select data-c="list" aria-label="Liste"><option value="">Liste</option>${opt([['ul','Liste à puces'],['ol','Liste numérotée'],['none','Aucune liste']])}</select>`;
- box.innerHTML=`<div class="edwrap"><div class="stick"><div class="ribs"><div class="rib" role="toolbar" aria-label="Taille, police, couleur, liste">${size}${font}${color}${list}</div>
- <div class="rib" role="toolbar" aria-label="Style du texte"><button type="button" data-t="bold" aria-pressed="false"><b>Gras</b></button><button type="button" data-t="italic" aria-pressed="false"><i>Italique</i></button><button type="button" data-t="underline" aria-pressed="false"><u>Souligné</u></button><button type="button" data-t="hl" aria-pressed="false"><span style="background:rgba(255,224,102,.65);padding:0 .3em">Surligné</span></button></div></div>${rib3}
- <div class="edhead"><button type="button" class="linkbtn" data-b="removeFormat">Effacer la mise en forme</button><span class="edbtns"><button type="button" class="fsbtn" data-f="full" aria-pressed="false">Plein écran</button></span></div></div>
+ box.innerHTML=`<div class="edwrap"><div class="stick">${bar}${rib3}
+ <div class="edhead"><span class="edbtns"><button type="button" class="fsbtn" data-f="full" aria-pressed="false">Plein écran</button></span></div></div>
  <p class="edmsg" role="status"></p>
  <div class="ed" contenteditable="true" role="textbox" aria-multiline="true" data-ph="${ph||''}"></div>
  <p class="cnt hint">Sélectionnez un mot ou un passage, puis utilisez les menus et les boutons ci-dessus.</p></div>`;
@@ -165,5 +185,5 @@ function initEditor(box,ph,opts){
  if(lsel){lsel.onchange=()=>{if(lsel.value==='x'){lsel.value=lh?'x':'';return}userLH(lsel.value===''?null:+lsel.value)};lrng.oninput=()=>userLH(+lrng.value)}
  setLH(remembered());
  return{getLH:()=>lh,setLH,resetLH:()=>setLH(remembered()),el:ed,html:()=>sanitize(ed.innerHTML),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h)},clear:()=>{ed.innerHTML=''},onInput:f=>ed.addEventListener('input',f),
-  isFull,exitFull:exit,setVoice:v=>{ed.classList.remove('v-moi','v-inv');if(v)ed.classList.add(v==='moi'?'v-moi':'v-inv');const cs=box.querySelector('[data-c=color]');if(cs)cs.hidden=!!v},notify:t=>{box.querySelector('.edmsg').textContent=t}};
+  isFull,exitFull:exit,setVoice:v=>{ed.classList.remove('v-moi','v-inv');if(v)ed.classList.add(v==='moi'?'v-moi':'v-inv');const cs=box.querySelector('[data-c=color]');if(cs)(cs.closest('.tsel')||cs).hidden=!!v},notify:t=>{box.querySelector('.edmsg').textContent=t}};
 }

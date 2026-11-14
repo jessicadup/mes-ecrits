@@ -2,12 +2,17 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="referrer" content="no-referrer"><title>Accès</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261114a"><style>
+<link rel="stylesheet" href="style.css?v=20261114b"><style>
 .menu{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin:2rem 0 1rem;padding-bottom:1.4rem;border-bottom:1px solid var(--line)}
 .menu button,.menu a,.menu a:visited{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:12rem;height:2.9rem;padding:0 1.3rem;margin:0;font:inherit;font-size:.95rem;line-height:1;background:none;color:var(--ink);border:1px solid var(--line);border-radius:6px;cursor:pointer;text-decoration:none;-webkit-appearance:none;appearance:none}
 .menu button:hover,.menu a:hover{border-color:var(--accent);background:none}
 .menu .on{border-color:var(--accent);color:var(--accent)}
 @media(max-width:560px){.menu button,.menu a{flex:1 1 100%}}
+#lock{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;justify-content:flex-end;align-items:center;height:2.8rem;margin:0;padding:0 .8rem;background:var(--bg);border-bottom:1px solid var(--line)}
+#lock button{display:inline-flex;align-items:center;gap:.45rem;height:2rem;padding:0 .85rem;margin:0;font-size:.85rem;line-height:1;background:none;color:var(--soft);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+#lock button:hover{border-color:var(--accent);color:var(--ink)}
+body.has-lock{padding-top:2.8rem;--stick-top:2.8rem}
+@media(max-width:560px){#lock button{width:2.4rem;padding:0;justify-content:center}#lock button span{display:none}}
 </style>
 </head>
 <body>
@@ -56,10 +61,10 @@
 <p class="row" id="bk" style="flex-wrap:wrap"><button class="ghost" data-x="main" type="button">Mots après maux</button><button class="ghost" data-x="grivois" type="button">Le lieu sûr</button><button data-x="all" type="button">Tout exporter</button></p>
 
 </div>
-<p id="lock" hidden style="text-align:center;margin-top:3rem"><button class="ghost" type="button" onclick="location.reload()">Verrouiller</button></p>
+<p id="lock" hidden><button type="button" onclick="location.reload()" aria-label="Verrouiller" title="Verrouiller"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Verrouiller</span></button></p>
 </section>
 </main><footer></footer>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=20261114a"></script><script src="cats.js?v=20261114a"></script><script src="rich.js?v=20261114a"></script><script src="crypto.js?v=20261114a"></script><script src="duo.js?v=20261114a"></script><script src="admin.js?v=20261114a"></script>
+<script src="config.js?v=20261114b"></script><script src="cats.js?v=20261114b"></script><script src="rich.js?v=20261114b"></script><script src="crypto.js?v=20261114b"></script><script src="duo.js?v=20261114b"></script><script src="admin.js?v=20261114b"></script>
 </body></html>

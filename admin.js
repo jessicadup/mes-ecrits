@@ -28,13 +28,13 @@ $('#unlock').onclick=async()=>{
  PW=p;m('Connexion…');
  try{await refresh(true);
   if(!S.tok){const c=cfg();localStorage.setItem('cfg',JSON.stringify({owner:c.o,repo:c.r,repo2:c.r2,branch:c.b,tok:await lock({t:TOK},p)}))}
-  $('#gate').hidden=true;$('#app').hidden=false;
+  $('#gate').hidden=true;$('#app').hidden=false;$('#lock').hidden=false;document.body.classList.add('has-lock');
  }catch(e){PW=null;m(bad(e))}};
 
 
 // Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
 function view(v){
- $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;document.body.classList.add('has-lock');
  document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='list')refresh();
 }
@@ -102,6 +102,7 @@ $('#pub').onclick=async()=>{if(DU.on()){if(await DU.send()){reset();msg('Publié
 $('#draft').onclick=async()=>{if(DU.on())return;if(await send(true))ED.exitFull()};
 
 // Mes textes (site principal)
+const nDraft=()=>textsOf(cur).filter(t=>t.draft).length+textsOf(lcur).filter(t=>t.draft&&ownerOf(t)!=='invite').length;
 async function refresh(strict){
  try{const{list,size}=await load();cur=list;pie(list,size);
   renderMain(list);
@@ -111,7 +112,7 @@ $('#list').onclick=ev=>treeAction(ev,'main');
 function renderMain(list){const m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  const tx=textsOf(list).filter(t=>t.category!=='grivois');
  let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:'Sans rubrique'});
- $('#list').innerHTML=h;fillCats()}
+ $('#list').innerHTML=h;fillCats();draftBadge(nDraft())}
 
 // Catégories : liste déroulante du formulaire
 function fillCats(){const s=$('#catg');if(!s)return;const L=$('#cat').value==='grivois',keep=s.value;
@@ -173,7 +174,7 @@ function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&
   +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique'})
   +(vis.some(isDuo)?'<h2 class="rh">À quatre mains</h2>'+duoHtml({texts:vis,who:'moi'}):'')
   +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true});fillCats()}
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true});fillCats();draftBadge(nDraft())}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=ev=>treeAction(ev,'lieu');
