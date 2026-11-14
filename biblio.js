@@ -46,7 +46,7 @@ async function change(fn,ok){try{
 // Étagères
 const spine=b=>{const h=hash(b.id+b.name),n=D.cards.filter(c=>c.book===b.id).length;
  return `<button class="spine" type="button" data-id="${b.id}" aria-label="Ouvrir le livre ${esc(b.name)}" style="background:${PAL[h%PAL.length]};height:${120+h%50}px;width:${34+Math.min(n*4,28)}px"><span>${esc(b.name)}</span></button>`};
-function render(){const per=innerWidth<700?5:8,rows=Math.max(3,Math.ceil(D.books.length/per));let h='';
+function render(){const per=innerWidth<760?4:5,rows=Math.max(3,Math.ceil(D.books.length/per));let h='';
  for(let r=0;r<rows;r++)h+=`<div class="shelf"><div class="row-b">${D.books.slice(r*per,(r+1)*per).map(spine).join('')}<span class="dec" aria-hidden="true">${DEC[r%5]}</span></div></div>`;
  $('#shelves').innerHTML=h+(D.books.length?'':'<p class="empty" style="padding:1rem">La bibliothèque est vide. Prenez la plume pour créer un premier livre.</p>');
  if(ovOpen())view();applyQ()}

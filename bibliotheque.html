@@ -5,25 +5,27 @@
 <style>
 :root{color-scheme:light;--accent:#b07a5e;--on:#fff;--bg:#fdf8ee;--ink:#4a372b;--serif:'Cormorant Garamond',Georgia,serif;--card:#fdf8ee;--line:#e3d2bb;--soft:#8a7566}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;padding-bottom:14rem;color:var(--ink);font:17px/1.6 'Nunito Sans',system-ui,sans-serif;background:radial-gradient(ellipse 50rem 30rem at 85% 5%,rgba(255,244,225,.9),transparent 70%),linear-gradient(#f4e2d4,#efd6c6)}
+body{margin:0;position:relative;overflow-x:hidden;min-height:100vh;padding-bottom:14rem;color:var(--ink);font:17px/1.6 'Nunito Sans',system-ui,sans-serif;background:linear-gradient(#fbeeeb,#f6e2de)}
+body:after{content:"";position:fixed;left:0;right:0;bottom:0;height:5rem;z-index:3;background:#e2cdb7;border-top:4px solid #cfb598}
 button{font:inherit;cursor:pointer}
 :focus-visible{outline:2px solid #b07a5e;outline-offset:2px}
 header.top{max-width:60rem;margin:0 auto;padding:1.6rem 1.2rem 0;text-align:center}
 header.top a{color:var(--soft);text-decoration:none;font-size:.9rem}
 h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0 1.2rem;color:#9b6a52}
-#case{max-width:46rem;margin:0 auto;padding:2.2rem .8rem 0;border:10px solid #c4977a;border-bottom:0;border-radius:14rem 14rem 0 0;background:#e9dccb;box-shadow:inset 0 0 30px rgba(120,80,50,.15)}
+#case{position:relative;width:min(48rem,130vw);margin:0 0 0 calc(min(48rem,130vw)/-3);padding:2.2rem .8rem 0;border:10px solid #5f6469;border-bottom:0;border-radius:14rem 14rem 0 0;background:#d5d8dc;box-shadow:inset 0 0 30px rgba(60,65,70,.25)}
 #shelves{padding:0 .4rem}
-.row-b{display:flex;align-items:flex-end;gap:3px;padding:.6rem .8rem 0;min-height:10.5rem;overflow-x:auto;border-bottom:12px solid #c4977a}
+.row-b{display:flex;align-items:flex-end;justify-content:flex-end;gap:3px;padding:.6rem .8rem 0;min-height:10.5rem;overflow-x:auto;border-bottom:12px solid #6b7075}
 .spine{flex:none;display:flex;align-items:center;justify-content:center;padding:6px 0;border:0;border-radius:3px 3px 1px 1px;color:#5a3f33;box-shadow:inset 3px 0 4px rgba(255,255,255,.35),inset -3px 0 5px rgba(90,60,40,.18);border-top:3px double rgba(255,255,255,.6);transition:transform .25s,opacity .3s,filter .3s}
 .spine span{writing-mode:vertical-rl;font:500 1.05rem/1 var(--serif);max-height:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .spine:hover{transform:translateY(-8px)}
 .spine.hit{filter:drop-shadow(0 0 8px #f2b56a) brightness(1.06);transform:translateY(-8px)}.spine.dim{opacity:.4}
-.dec{flex:none;margin-left:auto;padding:0 .4rem}
+.dec{flex:none;margin-left:.8rem;padding:0 .4rem}
 .empty{color:var(--soft);font-style:italic;text-align:center}
-#desk{position:fixed;left:0;right:0;bottom:0;height:12rem;z-index:5;background:repeating-linear-gradient(0deg,rgba(120,90,60,.1) 0 1px,transparent 1px 14px),linear-gradient(#e4cfb4,#d6bd9f);border-top:5px solid #f1e3cd;box-shadow:0 -10px 24px rgba(120,80,50,.25)}
-#mat{position:absolute;left:50%;bottom:.8rem;transform:translateX(-50%);width:min(46rem,64vw);height:9rem;padding:1.2rem 2rem;display:flex;flex-direction:column;justify-content:center;text-align:center;background:#c3cbb2;border:3px solid #a9b394;border-radius:10px;box-shadow:0 6px 12px rgba(90,60,40,.25)}
+#desk{position:fixed;left:24vw;right:4vw;bottom:0;height:12rem;z-index:5;background:repeating-linear-gradient(0deg,rgba(120,90,60,.1) 0 1px,transparent 1px 14px),linear-gradient(#e9d6bd,#d6bd9f);border-top:5px solid #f1e3cd;clip-path:polygon(7% 0,93% 0,100% 100%,0 100%)}
+#desk:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.2rem;background:#b98f66}
+#mat{position:absolute;left:50%;bottom:1.8rem;transform:translateX(-50%);width:min(40rem,60%);height:9rem;padding:1.2rem 2rem;display:flex;flex-direction:column;justify-content:center;text-align:center;background:#c3cbb2;border:3px solid #a9b394;clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);box-shadow:0 6px 12px rgba(90,60,40,.25)}
 #qt{margin:0;font:600 clamp(1.1rem,2.2vw,1.5rem)/1.3 'Dancing Script',cursive;color:#4b5a43}#qa{color:#5f6e55;font-size:.85rem;margin-top:.3rem}
-#tools{position:fixed;left:0;right:0;bottom:0;height:8rem;z-index:25;display:flex;justify-content:space-between;align-items:flex-end;padding:0 3vw 1rem;pointer-events:none;gap:.6rem}
+#tools{position:fixed;left:24vw;right:4vw;bottom:0;height:8rem;z-index:25;display:flex;justify-content:space-between;align-items:flex-end;padding:0 3vw 1.8rem;pointer-events:none;gap:.6rem}
 #tools>*{pointer-events:auto}
 .tool{background:none;border:0;padding:0;line-height:0;filter:drop-shadow(0 5px 4px rgba(90,60,40,.35));transition:transform .25s}
 .tool:hover,.tool[aria-pressed=true]{transform:rotate(-8deg) translateY(-6px)}
@@ -68,10 +70,17 @@ h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0
 #form .tbar{background:#fff!important;border-color:#d9c3a6!important}#form .tbar button{background:none!important;color:#4a372b!important;padding:0!important}#form .tbar button[aria-pressed=true]{background:var(--accent)!important;color:#fff!important}
 #toast{position:fixed;left:50%;bottom:9rem;transform:translateX(-50%);max-width:92vw;margin:0;padding:.6rem 1rem;border-radius:8px;background:#5a3f33;color:#fdf3e0;z-index:2200;box-shadow:0 4px 14px rgba(0,0,0,.3)}#toast[hidden]{display:none}
 .dlg button{padding:.6rem 1.1rem;border-radius:6px;border:1px solid #d9c3a6;background:var(--accent);color:#fff}.dlg button.ghost{background:none;color:var(--ink)}.dlg input{width:100%;padding:.6rem;margin:.5rem 0}.row{display:flex;gap:.6rem;justify-content:center}
-@media(max-width:759px){#case{border-radius:8rem 8rem 0 0;padding-top:1.4rem}.row-b{min-height:9rem}#desk{height:9rem}#veil{inset:0 0 6rem 0}#tools{height:6rem}#tools svg{width:58px;height:auto}#mat{height:5.5rem;padding:.5rem 1rem;width:56vw}#qa{display:none}#book{height:calc(100vh - 13rem)}.cover,.bk:before{display:none}.bk.closed{transform:none}#pr{left:0;width:100%;border-radius:6px}#pl{display:none}#toast{bottom:7rem}}
+#win{position:absolute;top:8rem;right:6vw;width:min(15rem,22vw);z-index:0}
+#win .gl{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:7px;aspect-ratio:3/4;padding:7px;background:#f3e6dc;border:9px solid #f3e6dc;border-radius:6px 6px 0 0;box-shadow:0 0 0 2px #d9c3b4,0 10px 24px rgba(150,100,90,.18)}
+#win .gl i{background:linear-gradient(#e4f0ee,#bcd6b0)}
+#win .gl i:nth-child(-n+2){background:linear-gradient(#cfe4ee,#eaf4f1)}
+#win .gl i:nth-child(1){background:radial-gradient(ellipse 34% 14% at 62% 42%,#fff,transparent),linear-gradient(#cfe4ee,#eaf4f1)}
+#win .sill{display:block;height:12px;margin:0 -10px;background:#ecdccf;border-radius:3px;box-shadow:0 4px 8px rgba(120,80,70,.2)}
+@media(max-width:759px){#win{display:none}#desk,#tools{left:4vw;right:4vw}#case{border-radius:8rem 8rem 0 0;padding-top:1.4rem}.row-b{min-height:9rem}#desk{height:9rem}#veil{inset:0 0 6rem 0}#tools{height:6rem}#tools svg{width:58px;height:auto}#mat{height:5.5rem;padding:.5rem 1rem;width:56vw}#qa{display:none}#book{height:calc(100vh - 13rem)}.cover,.bk:before{display:none}.bk.closed{transform:none}#pr{left:0;width:100%;border-radius:6px}#pl{display:none}#toast{bottom:7rem}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.st{display:none}}
 </style></head><body>
 <header class="top"><a href="index.html">← Mots après maux</a><h1>La bibliothèque</h1></header>
+<div id="win" aria-hidden="true"><div class="gl"><i></i><i></i><i></i><i></i></div><b class="sill"></b></div>
 <div id="case"><main id="shelves"></main></div>
 <div id="veil" hidden>
  <div id="bar"><h2 id="bt"></h2><span id="bact" hidden></span><button id="bfs" type="button" class="ghost">Plein écran</button><button id="bx" type="button" class="ghost" aria-label="Refermer le livre">✕</button></div>
@@ -87,5 +96,5 @@ h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0
  <div class="right"><button id="pen" class="tool" type="button" aria-label="Prendre la plume pour écrire" aria-pressed="false"><svg viewBox="0 0 80 80" width="84" height="84" aria-hidden="true"><rect x="16" y="38" width="30" height="38" rx="6" fill="#e3b6a0"/><path d="M30 40L24 8M38 40L50 10" stroke="#a8785c" stroke-width="3" stroke-linecap="round"/><path d="M34 40L58 6c3-4 8-2 6 3L44 40z" fill="#fdf8ee" stroke="#c9a283" stroke-width="2"/><rect x="54" y="54" width="20" height="22" rx="5" fill="#46566a"/><rect x="59" y="47" width="10" height="9" fill="#7c8da3"/></svg></button>
  <span class="cupw"><i class="st"></i><i class="st"></i><i class="st"></i><svg viewBox="0 0 80 64" width="84" height="68" aria-hidden="true"><ellipse cx="38" cy="56" rx="32" ry="6" fill="#ecd9c4"/><path d="M12 24h50l-4 28H16z" fill="#fdf8ee" stroke="#c9a283" stroke-width="2"/><path d="M62 30h6a8 8 0 0 1 0 16h-8" fill="none" stroke="#c9a283" stroke-width="3"/><ellipse cx="37" cy="24" rx="25" ry="4" fill="#8a5a3b"/></svg></span></div></div>
 <p id="toast" role="status" hidden></p>
-<script src="config.js?v=20261114c"></script><script src="crypto.js?v=20261114c"></script><script src="rich.js?v=20261114c"></script><script src="biblio.js?v=20261114c"></script>
+<script src="config.js?v=20261114d"></script><script src="crypto.js?v=20261114d"></script><script src="rich.js?v=20261114d"></script><script src="biblio.js?v=20261114d"></script>
 </body></html>
