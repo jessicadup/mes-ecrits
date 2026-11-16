@@ -53,14 +53,14 @@ $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
 async function refresh(strict){
  try{const{list}=await load();all=list;
   const mt=textsOf(list).filter(x=>x.by==='invite'),mc=catsOf(list,'grivois','invite');
-  $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle rubrique</button></p>'+treeHtml({texts:mt,cats:mc,scope:'lieu-invite',restTitle:'Sans rubrique',meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
+  $('#list').innerHTML='<p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew">+ Nouvelle rubrique</button></p>'+treeHtml({texts:mt,cats:mc,scope:'lieu-invite',restTitle:TIROIR,meta:t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+(t.n?` · ${fr(t.n.c)} caractères · ${fr(t.n.w)} mots`:'')});
   {const dh=duoHtml({texts:textsOf(list),who:'invite'});if(dh)$('#list').insertAdjacentHTML('beforeend','<div style="margin-top:1.2rem">'+dh+'</div>')}
   fillCats();draftBadge(mt.filter(t=>t.draft).length);
  }catch(e){if(strict)throw e;msg(bad(e))}}
 
 // Rubriques : liste déroulante du formulaire (ses propres rubriques seulement)
 function fillCats(){const s=$('#catg');if(!s)return;const keep=s.value,src=catsOf(all,'grivois','invite');
- s.innerHTML='<option value="">Sans rubrique</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
+ s.innerHTML='<option value="">Le tiroir pas rangé</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
  s.value=[...s.options].some(o=>o.value===keep)?keep:''}
 $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
  const name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim()){s.value='';return}

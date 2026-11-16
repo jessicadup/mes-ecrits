@@ -44,7 +44,10 @@ function placeText(list,e){
  else{const all=list.filter(x=>inGrp(x)&&x.id!==e.id).sort(byOrder);all.forEach((x,k)=>x.ord=k+1);e.ord=all.length+1}}
 
 // --- Consultation en accordéon (admin et page invité) : seuls les noms des rubriques sont visibles, une seule rubrique ouverte sur la page ---
-let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour « Sans rubrique »)
+// Groupe des textes sans rubrique : « Le tiroir pas rangé » (« pas rangé » en italique là où le HTML est possible)
+const TIROIR='Le tiroir pas rangé';
+const nmH=s=>s===TIROIR?'Le tiroir <i>pas rangé</i>':String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour le tiroir pas rangé)
 const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 (function(){if(document.getElementById('ca-css'))return;const s=document.createElement('style');s.id='ca-css';s.textContent=`
 .rh{font:500 1.5rem var(--serif,Georgia,serif);margin:2rem 0 .3rem}
@@ -93,7 +96,7 @@ function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
  const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
  const acc=(key,name,n,tools,inner,dn)=>{const op=CAOPEN===key;
-  return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${E(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span>${dn?`<span class="ca-d">✎ ${dn} brouillon${dn>1?'s':''}</span>`:''}</button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
+  return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${nmH(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span>${dn?`<span class="ca-d">✎ ${dn} brouillon${dn>1?'s':''}</span>`:''}</button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
  // brouillons d'abord (section à part), puis textes publiés ; les flèches ne concernent que les publiés
  const body=(items,mv)=>{const dr=items.filter(t=>t.draft),pb=items.filter(t=>!t.draft);let r='';
   if(dr.length)r+=`<div class="ca-dr"><p class="ca-st">✎ Brouillons (${dr.length})</p>${dr.map(t=>row(t,false)).join('')}</div>`;
@@ -103,7 +106,7 @@ function treeHtml(o){
  let h=!ro&&nd?`<p class="ca-sum">✎ ${nd} brouillon${nd>1?'s':''} à terminer</p>`:'';
  g.forEach((x,i)=>{const tools=ro?'':`<div class="ca-t"><button class="ghost" data-a="cup" data-id="${x.cat.id}"${i===0?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="cdown" data-id="${x.cat.id}"${i===g.length-1?' disabled':''} title="Descendre">↓</button><button class="ghost" data-a="cren" data-id="${x.cat.id}">Renommer</button><button class="ghost" data-a="cdel" data-id="${x.cat.id}">Supprimer la rubrique</button></div>`;
   h+=acc(sc+':'+x.cat.id,x.cat.name,x.items.length,tools,body(x.items,true),x.items.filter(t=>t.draft).length)});
- if(rest.length)h+=acc(sc+':none',o.restTitle||'Sans rubrique',rest.length,'',body([...rest].sort(byOrder),false),rest.filter(t=>t.draft).length);
+ if(rest.length)h+=acc(sc+':none',o.restTitle||TIROIR,rest.length,'',body([...rest].sort(byOrder),false),rest.filter(t=>t.draft).length);
  return `<div class="cons">${h||'<p class="empty">Aucun texte pour l’instant.</p>'}</div>`}
 
 // Choix d'une rubrique d'arrivée (suppression d'une rubrique, ou bouton « Rubrique » d'un texte)
@@ -112,7 +115,7 @@ function askRub(o){return new Promise(res=>{
  const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const d=document.createElement('div');d.className='dlg';
  const rows=[];
- if(o.none)rows.push(['none','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none"> Dans « Sans rubrique »</label>']);
+ if(o.none)rows.push(['none','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="none"> Dans le tiroir <i>pas rangé</i></label>']);
  if(o.others.length)rows.push(['cat',`<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="cat"> Dans la rubrique : <select class="dsel" style="width:auto;max-width:100%">${o.others.map(c=>`<option value="${c.id}">${E(c.name)}</option>`).join('')}</select></label>`]);
  rows.push(['new','<label style="display:block;margin:.5rem 0"><input type="radio" name="dm" value="new"> Dans une nouvelle rubrique : <input type="text" class="dnew" placeholder="Nom de la rubrique" style="margin-top:.3rem"></label>']);
  d.innerHTML=`<div role="dialog" aria-modal="true" style="text-align:left"><p class="t" style="text-align:center"></p>${rows.map(r=>r[1]).join('')}<p class="row" style="flex-wrap:wrap;margin-top:1rem"><button class="ok" type="button"></button><button class="ghost no" type="button">Annuler</button></p></div>`;

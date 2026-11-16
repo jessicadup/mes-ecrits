@@ -111,14 +111,14 @@ $('#list').onclick=ev=>treeAction(ev,'main');
 
 function renderMain(list){const m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  const tx=textsOf(list).filter(t=>t.category!=='grivois');
- let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:'Sans rubrique'});
+ let h='<h2 class="rh">Mots après maux</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="main">+ Nouvelle rubrique</button></p>'+treeHtml({texts:tx,cats:catsOf(list,'main'),meta:m,scope:'main',restTitle:TIROIR});
  $('#list').innerHTML=h;fillCats();draftBadge(nDraft())}
 
 // Catégories : liste déroulante du formulaire
 function fillCats(){const s=$('#catg');if(!s)return;const L=$('#cat').value==='grivois',keep=s.value;
  const src=L?catsOf(lcur,'grivois','moi'):catsOf(cur,'main');
  $('label[for=catg]').textContent='Rubrique';
- s.innerHTML='<option value="">Sans rubrique</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
+ s.innerHTML='<option value="">Le tiroir pas rangé</option>'+src.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+'<option value="__new">+ Nouvelle rubrique…</option>';
  s.value=[...s.options].some(o=>o.value===keep)?keep:''}
 $('#catg').onchange=async()=>{const s=$('#catg');if(s.value!=='__new')return;
  const lieuS=$('#cat').value==='grivois',sec=lieuS?'grivois':'main',pw=lieuS?($('#pw').value||LP):PW;
@@ -171,10 +171,10 @@ const{list,sha}=await load(store,pw);let nl=list;
 // Le lieu sûr (fichier séparé, son propre mot de passe)
 function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  $('#llist').innerHTML='<h2 class="rh">Mes textes</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="moi">+ Nouvelle rubrique</button></p>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:'Sans rubrique'})
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:TIROIR})
   +(vis.some(isDuo)?'<h2 class="rh">À quatre mains</h2>'+duoHtml({texts:vis,who:'moi'}):'')
   +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
-  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:'Sans rubrique',readonly:true});fillCats();draftBadge(nDraft())}
+  +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:TIROIR,readonly:true});fillCats();draftBadge(nDraft())}
 $('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=ev=>treeAction(ev,'lieu');
@@ -194,7 +194,7 @@ function pie(list,size){
   +(size>LIMIT*.7?'<br>⚠ Bientôt plein : il faudra passer à un fichier par texte.':'')}
 $('#bk').onclick=ev=>{const b=ev.target.closest('button');if(b)exportCat(b.dataset.x)};
 async function exportCat(x){
- const rn=t=>(catsOf(cur,'main').find(c=>c.id===t.cat)||{name:'Sans rubrique'}).name;
+ const rn=t=>(catsOf(cur,'main').find(c=>c.id===t.cat)||{name:TIROIR}).name;
  let items=(x==='grivois'?[]:textsOf(cur).filter(t=>t.category!=='grivois')).map(t=>({...t,rub:rn(t)}));
  if(x==='grivois'||x==='all'){const p=prompt('Mot de passe du lieu sûr (laisser vide pour ignorer le lieu sûr) :');
   if(p){try{const L=await load('lieu',p);items=items.concat(L.list.filter(t=>!isCat(t)).map(t=>({...t,category:'grivois',body:isDuo(t)?t.parts.map(p=>(p.by==='moi'?'[Moi] ':'[Invité] ')+p.body).join('\n\n'):t.body})))}catch(e){return msg(bad(e))}}}

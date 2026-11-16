@@ -2,7 +2,7 @@ const $=s=>document.querySelector(s),main=$('#main');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const CATS={roman:['Pour mes filles','Un roman-témoignage, écrit pour elles.'],libre:['Textes libres','Des textes posés ici, sans lien entre eux.'],grivois:['Privé','Un coin réservé. Le mot de passe est nécessaire.']};
 let texts=[],plain={},lieu=[],mcats=[],lieuCats=[],open=false,lieuOnly=false;
-const rubName=t=>(mcats.find(c=>c.id===t.cat)||{name:'Sans rubrique'}).name;
+const rubName=t=>{const c=mcats.find(c=>c.id===t.cat);return c?esc(c.name):nmH(TIROIR)};
 const OWNER=CFG.owner||(location.hostname.endsWith('github.io')?location.hostname.split('.')[0]:'');
 const LIEU_URL=()=>`https://raw.githubusercontent.com/${OWNER}/${CFG.lieu}/${CFG.branch}/lieu.json?_=${Date.now()}`;
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'';
@@ -37,13 +37,13 @@ const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return 
 `;document.head.appendChild(s)})();
 const openSet=new Set();
 function acc(key,name,count,inner){const o=openSet.has(key);
- return `<div class="acc${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${esc(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span><span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
+ return `<div class="acc${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${nmH(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span><span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
 function grouped(items,cats,rule,scope){
  const{g,rest}=groupTexts(items,cats),shown=g.filter(x=>x.items.length);
  if(!shown.length)return list([...rest].sort(rule));
  let h='';
  shown.forEach(x=>{h+=acc(scope+':'+x.cat.id,x.cat.name,x.items.length,list(x.items))});
- if(rest.length)h+=acc(scope+':none','Sans catégorie',rest.length,list([...rest].sort(rule)));
+ if(rest.length)h+=acc(scope+':none',TIROIR,rest.length,list([...rest].sort(rule)));
  return h}
 main.addEventListener('click',e=>{const h=e.target.closest('.acc-h');if(!h)return;
  const box=h.parentElement,b=box.querySelector('.acc-b'),o=!b.classList.contains('open'),k=box.dataset.k;
@@ -55,7 +55,7 @@ function rubHtml(){
  const g=rubs.map(r=>({r,items:texts.filter(t=>t.cat===r.id).sort(byOrder)})).filter(x=>x.items.length);
  const rest=texts.filter(t=>!t.cat||!known.has(t.cat)).sort(byOrder);
  let h=g.map(x=>acc('main:'+x.r.id,x.r.name,x.items.length,list(x.items))).join('');
- if(rest.length)h+=acc('main:none','Sans rubrique',rest.length,list(rest));
+ if(rest.length)h+=acc('main:none',TIROIR,rest.length,list(rest));
  return h||'<p class="empty">Rien ici pour l’instant.</p>'}
 
 function home(){
