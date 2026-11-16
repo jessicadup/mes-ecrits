@@ -31,7 +31,7 @@ async function auth(){if(TOK)return true;
  const A=JSON.parse(localStorage.getItem('cfg')||'null'),L=JSON.parse(localStorage.getItem('cfgL')||'null');
  if(!(A&&A.tok)&&!(L&&L.tok)){toast('Pour écrire, ouvrez d’abord votre page admin ou invité sur cet appareil.');return false}
  const pw=await askPw();if(!pw)return false;
- for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS=c;return true}catch{}}
+ for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS={owner:c.owner||OWNER,repo2:c.repo2||CFG.lieu};return true}catch{}}
  toast('Mot de passe incorrect.');return false}
 const api=()=>`https://api.github.com/repos/${CS.owner}/${CS.repo2}/contents/bibliotheque.json`;
 const hd=()=>({Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'});
@@ -40,7 +40,7 @@ async function change(fn,ok){try{
  const r=await fetch(api()+'?ref='+CFG.branch+'&_='+Date.now(),{headers:hd()});let sha=null,d=norm(null);
  if(r.ok){const j=await r.json();sha=j.sha;d=norm(JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,'')))))}else if(r.status!==404)throw new Error('GitHub a répondu '+r.status+' : vérifiez le jeton.');
  fn(d);const b={message:'Bibliotheque',branch:CFG.branch,content:toB64(new TextEncoder().encode(JSON.stringify(d)))};if(sha)b.sha=sha;
- const w=await fetch(api(),{method:'PUT',headers:hd(),body:JSON.stringify(b)});if(!w.ok)throw new Error('L’enregistrement a échoué ('+w.status+'). Réessayez.');
+ const w=await fetch(api(),{method:'PUT',headers:hd(),body:JSON.stringify(b)});if(!w.ok)throw new Error(w.status===404||w.status===403||w.status===401?'Dépôt introuvable ou jeton sans accès ('+w.status+'). Vérifiez que le jeton couvre bien le dépôt « '+CS.repo2+' » avec « Contents : Read and write ».':'L’enregistrement a échoué ('+w.status+'). Réessayez.');
  D=d;render();toast(ok);return true}catch(e){toast(e.message);return false}}
 
 // Étagères
