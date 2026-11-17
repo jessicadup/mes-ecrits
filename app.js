@@ -36,12 +36,10 @@ const list=(items,sc)=>{if(!items.length)return '<p class="empty">Rien ici pour 
 @media(prefers-reduced-motion:reduce){.acc-b,.acc-h .arr{transition:none}.acc-i{transition:none}}
 .nw{display:inline-block;margin-left:.6rem;padding:0 .55rem;border-radius:9px;background:var(--accent);color:var(--on);font:600 .72rem/1.6 var(--sans,system-ui,sans-serif);letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
 .nwc{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:1.35rem;height:1.35rem;padding:0 .4rem;border-radius:.7rem;background:var(--accent);color:var(--on);font:600 .75rem/1 var(--sans,system-ui,sans-serif)}
-.acc.nb{border:0;border-radius:0;margin:0 0 .3rem}
-.acc.nb .acc-h{padding:.9rem 0}.acc.nb .acc-h:hover{background:none}.acc.nb .acc-i{padding:0}
 `;document.head.appendChild(s)})();
 const openSet=new Set();
 function acc(key,name,count,inner,items){const o=openSet.has(key),S=seenSet(),nn=items?items.filter(t=>isNew(t,S)).length:0;
- return `<div class="acc${key.startsWith('lieu')?' nb':''}${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${knotOf(key)}${nmH(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span>${nn?`<span class="nwc" aria-label="${nn} nouveau${nn>1?'x':''}">${nn}</span>`:''}<span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
+ return `<div class="acc${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${knotOf(key)}${nmH(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span>${nn?`<span class="nwc" aria-label="${nn} nouveau${nn>1?'x':''}">${nn}</span>`:''}<span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
 function grouped(items,cats,rule,scope){
  const{g,rest}=groupTexts(items,cats),shown=g.filter(x=>x.items.length);
  if(!shown.length){const r=[...rest].sort(rule);return scope.startsWith('lieu')?acc(scope+':none',TIROIR,r.length,list(r),r):list(r)}
