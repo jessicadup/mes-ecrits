@@ -89,11 +89,11 @@ async function send(draft){
    const p=$('#pw').value||LP||'';if(p.length<10)return msg('Mot de passe du lieu sûr : 10 caractères minimum.');
    msg('Enregistrement en cours…');
    const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};if(cg)e.cat=cg;placeText(list,e);
-   i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour','lieu',p);LP=p;lcur=list;renderLieu();
+   i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour','lieu',p);markSeen(e);LP=p;lcur=list;renderLieu();
   }else{
    msg('Enregistrement en cours…');
    const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);if(cg)e.cat=cg;placeText(list,e);
-   i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');refresh();
+   i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');markSeen(e);refresh();
   }
   openAt(cat==='grivois'?'lieu-moi':'main',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
    if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;

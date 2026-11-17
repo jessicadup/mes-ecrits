@@ -94,7 +94,7 @@ async function send(draft){
  try{msg('Enregistrement en cours…');
   const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;{const lhv=ED.getLH();if(lhv)e.lh=lhv}
   const i=list.findIndex(x=>x.id===id&&x.by==='invite');placeText(list,e);i>=0?list[i]=e:list.push(e);
-  await save(list,sha,'Mise a jour');openAt('lieu-invite',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();
+  await save(list,sha,'Mise a jour');markSeen(e);openAt('lieu-invite',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();
    if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=async()=>{if(DU.on()){if(await DU.send()){reset();msg('Publié.');ED.exitFull();view('list');scrollTo(0,0)}return}if(await send(false))ED.exitFull()};

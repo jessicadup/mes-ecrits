@@ -10,12 +10,12 @@ const body=t=>esc(t).split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>'
 const of=c=>texts.filter(t=>t.category===c).sort((a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1));
 const KNOT={e:'<svg class="knot" viewBox="0 0 32 16" width="34" height="17" style="width:1.9em;height:.95em;vertical-align:-.14em;margin-right:.5em;color:var(--accent);flex:none" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M16 8C9.5 1.5 1.5 3 1.5 8C1.5 13 9.5 14.5 16 8"/><path d="M16 8C22.5 1.5 30.5 3 30.5 8C30.5 13 22.5 14.5 16 8"/><path d="M13 10.6L19 5.4" stroke="var(--bg)" stroke-width="4.4"/><path d="M13 10.6L19 5.4"/></svg>',c:'<svg class="knot" viewBox="-1 1.5 26 21" width="26" height="21" style="width:1.3em;height:1.05em;vertical-align:-.16em;margin-right:.5em;color:var(--accent);flex:none" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><ellipse cx="9" cy="12" rx="7.5" ry="6"/><ellipse cx="15" cy="12" rx="7.5" ry="6" stroke="var(--bg)" stroke-width="4.4"/><ellipse cx="15" cy="12" rx="7.5" ry="6"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6" stroke="var(--bg)" stroke-width="4.4"/><path d="M13.8 7.4A7.5 6 0 0 0 9.65 6"/><path d="M3.2 16L1 21M20.8 8L23 3"/></svg>'};
 KNOT.d='<span style="white-space:nowrap">'+KNOT.e.replace('margin-right:.5em','margin-right:.15em')+KNOT.c+'</span>';
-const knot=t=>t.category==='grivois'?(t.duo?KNOT.d:t.by==='invite'?KNOT.c:KNOT.e):'';
+const knotOf=k=>k.startsWith('lieu-duo')?KNOT.d:k.startsWith('lieu-invite')?KNOT.c:k.startsWith('lieu-moi')?KNOT.e:'';
 const sortD=l=>[...l].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 const wc=s=>(String(s).match(/\S+/g)||[]).length;
 const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
 const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${knot(t)}${esc(v.title)}</b><span>${sc?rubName(t)+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join(''):'<p class="empty">Rien ici pour l’instant.</p>';
+const list=(items,sc)=>{if(!items.length)return '<p class="empty">Rien ici pour l’instant.</p>';const S=seenSet();return items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}${isNew(t,S)?'<span class="nw">nouveau</span>':''}</b><span>${sc?rubName(t)+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join('')};
 
 // Accordéon des catégories : seuls les noms s'affichent, un clic déplie la liste des textes (styles intégrés ici)
 (function(){if(document.getElementById('acc-css'))return;const s=document.createElement('style');s.id='acc-css';s.textContent=`
@@ -34,16 +34,20 @@ const list=(items,sc)=>items.length?items.map(t=>{const v=plain[t.id]||t;return 
 .acc-i{min-height:0;overflow:hidden;padding:0 1.1rem;visibility:hidden;transition:visibility 0s .35s}
 .acc-b.open .acc-i{visibility:visible;transition:visibility 0s}
 @media(prefers-reduced-motion:reduce){.acc-b,.acc-h .arr{transition:none}.acc-i{transition:none}}
+.nw{display:inline-block;margin-left:.6rem;padding:0 .55rem;border-radius:9px;background:var(--accent);color:var(--on);font:600 .72rem/1.6 var(--sans,system-ui,sans-serif);letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+.nwc{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:1.35rem;height:1.35rem;padding:0 .4rem;border-radius:.7rem;background:var(--accent);color:var(--on);font:600 .75rem/1 var(--sans,system-ui,sans-serif)}
+.acc.nb{border:0;border-radius:0;margin:0 0 .3rem}
+.acc.nb .acc-h{padding:.9rem 0}.acc.nb .acc-h:hover{background:none}.acc.nb .acc-i{padding:0}
 `;document.head.appendChild(s)})();
 const openSet=new Set();
-function acc(key,name,count,inner){const o=openSet.has(key);
- return `<div class="acc${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${nmH(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span><span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
+function acc(key,name,count,inner,items){const o=openSet.has(key),S=seenSet(),nn=items?items.filter(t=>isNew(t,S)).length:0;
+ return `<div class="acc${key.startsWith('lieu')?' nb':''}${key.startsWith('lieu-invite')?' acc-r':''}" data-k="${esc(key)}"><button type="button" class="acc-h" aria-expanded="${o}"><span class="acc-n">${knotOf(key)}${nmH(name)}</span><span class="acc-c">${count} texte${count>1?'s':''}</span>${nn?`<span class="nwc" aria-label="${nn} nouveau${nn>1?'x':''}">${nn}</span>`:''}<span class="arr" aria-hidden="true"></span></button><div class="acc-b${o?' open':''}"><div class="acc-i">${inner}</div></div></div>`}
 function grouped(items,cats,rule,scope){
  const{g,rest}=groupTexts(items,cats),shown=g.filter(x=>x.items.length);
- if(!shown.length)return list([...rest].sort(rule));
+ if(!shown.length){const r=[...rest].sort(rule);return scope.startsWith('lieu')?acc(scope+':none',TIROIR,r.length,list(r),r):list(r)}
  let h='';
- shown.forEach(x=>{h+=acc(scope+':'+x.cat.id,x.cat.name,x.items.length,list(x.items))});
- if(rest.length)h+=acc(scope+':none',TIROIR,rest.length,list([...rest].sort(rule)));
+ shown.forEach(x=>{h+=acc(scope+':'+x.cat.id,x.cat.name,x.items.length,list(x.items),x.items)});
+ if(rest.length)h+=acc(scope+':none',TIROIR,rest.length,list([...rest].sort(rule)),rest);
  return h}
 main.addEventListener('click',e=>{const h=e.target.closest('.acc-h');if(!h)return;
  const box=h.parentElement,b=box.querySelector('.acc-b'),o=!b.classList.contains('open'),k=box.dataset.k;
@@ -54,8 +58,8 @@ function rubHtml(){
  const rubs=catsOf(mcats,'main'),known=new Set(rubs.map(r=>r.id));
  const g=rubs.map(r=>({r,items:texts.filter(t=>t.cat===r.id).sort(byOrder)})).filter(x=>x.items.length);
  const rest=texts.filter(t=>!t.cat||!known.has(t.cat)).sort(byOrder);
- let h=g.map(x=>acc('main:'+x.r.id,x.r.name,x.items.length,list(x.items))).join('');
- if(rest.length)h+=acc('main:none',TIROIR,rest.length,list(rest));
+ let h=g.map(x=>acc('main:'+x.r.id,x.r.name,x.items.length,list(x.items),x.items)).join('');
+ if(rest.length)h+=acc('main:none',TIROIR,rest.length,list(rest),rest);
  return h||'<p class="empty">Rien ici pour l’instant.</p>'}
 
 function home(){
@@ -69,19 +73,20 @@ function cat(c){
  if(c==='grivois'){
   const mine=sortD(lieu.filter(x=>x.by!=='invite'&&!x.duo)),his=sortD(lieu.filter(x=>x.by==='invite')),duos=lieu.filter(x=>x.duo).sort(byOrder);
   const cp=innerWidth<=900;
-  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),byOrder,'lieu-moi'):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section>'+(duos.length?'<section class="duo" style="text-align:center">'+acc('lieu-duo:q','À quatre mains',duos.length,list(duos))+'</section>':'')+'<section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),byOrder,'lieu-invite'):'')+'</section></div>';return}
+  main.innerHTML='<a class="back" href="#/">← Revenir</a><div class="mir" style="display:flex;flex-direction:column;gap:2.5rem;margin-top:2rem;'+(cp?'padding:0 36px;':'')+'"><section class="mine" style="text-align:left;min-height:'+(cp?'8rem':'16rem')+'">'+(lieu.length?(mine.length?grouped(mine,catsOf(lieuCats,'grivois','moi'),byOrder,'lieu-moi'):''):'<p class="empty">Rien ici pour l’instant.</p>')+'</section>'+(duos.length?'<section class="duo" style="text-align:center">'+acc('lieu-duo:q','À quatre mains',duos.length,list(duos),duos)+'</section>':'')+'<section class="his" style="text-align:right;min-height:'+(cp?'10rem':'20rem')+'">'+(his.length?grouped(his,catsOf(lieuCats,'grivois','invite'),byOrder,'lieu-invite'):'')+'</section></div>';return}
  main.innerHTML=`<h1>${CATS[c][0]}</h1><p class="lead">${CATS[c][1]}</p>`+(of(c).length?grouped(of(c),catsOf(mcats,c),(a,b)=>(a.date||'').localeCompare(b.date||'')*(c==='roman'?1:-1),c):'<p class="empty">Rien ici pour l’instant.</p>');
 }
 
 function show(id){
  const t=texts.find(x=>x.id===id)||lieu.find(x=>x.id===id);if(!t)return home();
  const g=t.category==='grivois';if(g&&!lieuOk){location.hash='#/envers';return}
+ markSeen(t);
  let top='',nav='';const lhn=+t.lh,lhs=lhn>=1&&lhn<=3?` style="line-height:${lhn}"`:'';
  if(t.cat){const c=(g?lieuCats:mcats).find(x=>x.id===t.cat),sib=siblings(t,g?lieu:texts),i=sib.findIndex(x=>x.id===t.id);
   if(c&&i>=0){top=`<p class="catline" style="margin:1.4rem 0 0;color:var(--accent);font-size:.9rem">${esc(c.name)} · ${i+1} / ${sib.length}</p>`;
    const bs='display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:2.8rem;padding:0 1.2rem;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);flex:1 1 13rem;text-align:center';
    nav=`<div class="chnav" style="display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2.5rem">${i>0?`<a class="chbtn" style="${bs}" href="#/t/${sib[i-1].id}">← Chapitre précédent</a>`:'<span style="flex:1 1 13rem"></span>'}${i<sib.length-1?`<a class="chbtn" style="${bs}" href="#/t/${sib[i+1].id}">Chapitre suivant →</a>`:'<span style="flex:1 1 13rem"></span>'}</div>`}}
- main.innerHTML=`<a class="back" href="#/${g?'envers':''}">← ${g?'Le lieu sûr':'Retour'}</a>${top}<h1 style="margin-top:${top?'.4rem':'1.5rem'}">${knot(t)}${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text"${lhs}>${t.duo?duoView(t):t.html?sanitize(t.html):body(t.body)}</div>${nav}`;
+ main.innerHTML=`<a class="back" href="#/${g?'envers':''}">← ${g?'Le lieu sûr':'Retour'}</a>${top}<h1 style="margin-top:${top?'.4rem':'1.5rem'}">${esc(t.title)}</h1><p class="lead">${fmt(t.date)} · ${rt(t.body)}</p><div class="text"${lhs}>${t.duo?duoView(t):t.html?sanitize(t.html):body(t.body)}</div>${nav}`;
 }
 
 let lieuOk=false;

@@ -50,7 +50,7 @@ function makeDuo(o){
     else t.parts.push(part)}
    else{const c=duoCat(list);t={id:Date.now().toString(36),date:o.date(),title,by:'duo',duo:true,cat:c.id,parts:[part]};list.push(t)}
    duoCalc(t);
-   await o.sv(list,sha);o.done(list);openAt('duo','quatre');return true
+   await o.sv(list,sha);markSeen(t);o.done(list);openAt('duo','quatre');return true
   }catch(e){o.msg(o.bad(e))}}
 
  // Supprimer un de ses passages (depuis l'éditeur)

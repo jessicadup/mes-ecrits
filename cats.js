@@ -46,6 +46,12 @@ function placeText(list,e){
 // --- Consultation en accordéon (admin et page invité) : seuls les noms des rubriques sont visibles, une seule rubrique ouverte sur la page ---
 // Groupe des textes sans rubrique : « Le tiroir pas rangé » (« pas rangé » en italique là où le HTML est possible)
 const TIROIR='Le tiroir pas rangé';
+// Pastille « nouveau » : texte de moins d'une semaine pas encore ouvert sur cet appareil (la mémoire des textes lus reste dans le navigateur)
+const seenKey=t=>isDuo(t)?t.id+':'+t.parts.length:String(t.id);
+const seenSet=()=>{try{return new Set(JSON.parse(localStorage.getItem('seen')||'[]'))}catch{return new Set()}};
+function markSeen(t){try{const s=seenSet();s.add(seenKey(t));localStorage.setItem('seen',JSON.stringify([...s].slice(-3000)))}catch{}}
+const lastDate=t=>isDuo(t)?(t.parts.map(p=>p.date||'').sort().pop()||t.date||''):(t.date||'');
+function isNew(t,S){if(isCat(t)||t.draft)return false;const ms=Date.parse(lastDate(t)+'T12:00:00');return !isNaN(ms)&&Date.now()-ms<=7*864e5&&!(S||seenSet()).has(seenKey(t))}
 const nmH=s=>s===TIROIR?'Le tiroir <i>pas rangé</i>':String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour le tiroir pas rangé)
 const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
