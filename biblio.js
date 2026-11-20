@@ -10,6 +10,7 @@ const DEC=['<svg viewBox="0 0 44 56" width="44"><path d="M22 34C12 28 8 16 14 8M
 // Citations du sous-main : une au hasard à chaque ouverture (ajoutez les vôtres ici)
 const QUOTES=[['Écrire, c’est une façon de parler sans être interrompu.','Jules Renard'],['Ce que l’on conçoit bien s’énonce clairement, et les mots pour le dire arrivent aisément.','Boileau'],['Le style, c’est l’homme même.','Buffon'],['Polissez-le sans cesse, et le repolissez.','Boileau']];
 {const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];$('#qt').textContent='« '+q[0]+' »';$('#qa').textContent=q[1]}
+let CR={};askOpener().then(c=>{CR=c||{}});keepAlive();
 let D={books:[],cards:[]},WHO=null,TOK='',CS=null,cur=null,edit=false,eid=null,PG=[],ps=0;
 const ED=initEditor($('#edbox'),'Écrivez la fiche ici…');
 $('#fty').innerHTML=TYPES.map(t=>`<option>${t}</option>`).join('');
@@ -30,8 +31,11 @@ const askPw=()=>new Promise(res=>{const d=document.createElement('div');d.classN
 async function auth(){if(TOK)return true;
  const A=JSON.parse(localStorage.getItem('cfg')||'null'),L=JSON.parse(localStorage.getItem('cfgL')||'null');
  if(!(A&&A.tok)&&!(L&&L.tok)){toast('Pour écrire, ouvrez d’abord votre page admin ou invité sur cet appareil.');return false}
+ const tryPw=async pw=>{for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS={owner:c.owner||OWNER,repo2:c.repo2||CFG.lieu};return true}catch{}}return false};
+ // ouverte depuis une page d'écriture : mots de passe transmis en mémoire
+ for(const p of[CR.sp,CR.lp])if(p&&await tryPw(p))return true;
  const pw=await askPw();if(!pw)return false;
- for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS={owner:c.owner||OWNER,repo2:c.repo2||CFG.lieu};return true}catch{}}
+ if(await tryPw(pw))return true;
  toast('Mot de passe incorrect.');return false}
 const api=()=>`https://api.github.com/repos/${CS.owner}/${CS.repo2}/contents/bibliotheque.json`;
 const hd=()=>({Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'});

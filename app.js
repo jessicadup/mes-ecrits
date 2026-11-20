@@ -105,7 +105,12 @@ function route(){
  home();
  if(ask||lieuOnly)openDoor();
 }
+async function loadLieu(pw){const r=await fetch(LIEU_URL());if(!r.ok)throw 0;const o=await r.json();
+ const all=await unlock(o.enc,pw);lieuCats=all.filter(isCat);lieu=all.filter(x=>!isCat(x)&&!x.draft).map(x=>({...x,category:'grivois'}));
+ lieuOk=true;location.hash==='#/envers'?route():location.hash='#/envers'}
 function openDoor(){
+ // ouverte depuis une page d'écriture : le mot de passe du lieu a été transmis
+ if(CR.lp){if(!CR.busy){CR.busy=true;loadLieu(CR.lp).catch(()=>{CR.lp=null;openDoor()}).finally(()=>{CR.busy=false})}return}
  if($('#door'))return;
  const d=document.createElement('div');d.id='door';
  d.innerHTML='<form role="dialog" aria-modal="true" aria-label="Accès"><input type="password" id="dp" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe"><label class="show"><input type="checkbox" id="dsp"> Afficher le mot de passe</label><p><button>Entrer</button> <button type="button" class="ghost" id="dc">Annuler</button></p><p class="msg" id="dm" role="status"></p></form>';
@@ -117,9 +122,7 @@ function openDoor(){
  d.onclick=e=>{if(e.target===d)close()};
  d.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
  d.querySelector('form').onsubmit=async e=>{e.preventDefault();$('#dm').textContent='Vérification…';
-  try{const r=await fetch(LIEU_URL());if(!r.ok)throw 0;const o=await r.json();
-   {const all=await unlock(o.enc,$('#dp').value);lieuCats=all.filter(isCat);lieu=all.filter(x=>!isCat(x)&&!x.draft).map(x=>({...x,category:'grivois'}))}
-   lieuOk=true;close();location.hash==='#/envers'?route():location.hash='#/envers'}
+  try{await loadLieu($('#dp').value);close()}
   catch{$('#dm').textContent='Mot de passe incorrect.'}};
 }
 addEventListener('hashchange',route);
@@ -127,10 +130,18 @@ function gate(){
  main.innerHTML='<form id="g" class="gate"><h1>Accès privé</h1><p class="lead">Ce site est réservé.</p><input type="password" id="gp" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe" autofocus><label class="show"><input type="checkbox" id="sp"> Afficher le mot de passe</label><p><button>Entrer</button></p><p class="msg" id="gm" role="status"></p></form>';
  $('#sp').onchange=e=>{$('#gp').type=e.target.checked?'text':'password'};
  $('#g').onsubmit=async e=>{e.preventDefault();$('#gm').textContent='Vérification…';
-  try{const r=await fetch('content/texts.json?'+Date.now()),o=r.ok?await r.json():[];
-   {const all=normalizeMain(Array.isArray(o)?[]:await unlock(o.enc,$('#gp').value));mcats=all.filter(isCat);texts=all.filter(t=>!isCat(t)&&t.category!=='grivois'&&!t.draft)}
-   open=true;route()}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
-if(/^#\/lieu\b/.test(location.hash)){lieuOnly=true;open=true;history.replaceState(null,'',location.pathname+location.search+'#/');route()}else gate();
+  try{await loadSite($('#gp').value)}catch{$('#gm').textContent='Mot de passe incorrect.'}}}
+async function loadSite(pw){const r=await fetch('content/texts.json?'+Date.now()),o=r.ok?await r.json():[];
+ {const all=normalizeMain(Array.isArray(o)?[]:await unlock(o.enc,pw));mcats=all.filter(isCat);texts=all.filter(t=>!isCat(t)&&t.category!=='grivois'&&!t.draft)}
+ open=true;route()}
+let CR={};
+(async()=>{
+ // ouverte depuis une page d'écriture (site, lieu) : les mots de passe sont transmis en mémoire ; sinon ils sont demandés
+ CR=await askOpener()||{};keepAlive();
+ if(/^#\/lieu\b/.test(location.hash)){lieuOnly=true;open=true;history.replaceState(null,'',location.pathname+location.search+'#/');route()}
+ else if(CR.sp){try{await loadSite(CR.sp)}catch{CR.sp=null;gate()}}
+ else gate();
+})();
 
 // Dissuasion contre la copie (ne remplace pas le chiffrement)
 const inField=e=>/^(INPUT|TEXTAREA)$/.test((e.target.tagName||''));

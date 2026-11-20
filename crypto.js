@@ -8,3 +8,15 @@ async function lock(obj,pw){const salt=crypto.getRandomValues(new Uint8Array(16)
  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await _key(pw,salt),_e.encode(JSON.stringify(obj))));
  return{s:toB64(salt),i:toB64(iv),d:toB64(ct)}}
 async function unlock(e,pw){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(e.i)},await _key(pw,fromB64(e.s)),fromB64(e.d));return JSON.parse(_d.decode(pt))}
+
+// Pages de lecture et bibliothèque ouvertes depuis une page d'écriture : elles demandent les mots de passe à cette page (en mémoire seulement, jamais stockés)
+function askOpener(){return new Promise(res=>{
+ let t,done=false;
+ const fin=v=>{if(done)return;done=true;removeEventListener('message',h);clearTimeout(t);res(v)};
+ const h=e=>{const m=e.data;if(e.origin!==location.origin||e.source!==window.opener||!m||m.t!=='creds')return;fin({sp:m.sp||null,lp:m.lp||null})};
+ try{if(!window.opener||window.opener.closed)return res(null);
+  addEventListener('message',h);window.opener.postMessage({t:'need-creds'},location.origin);t=setTimeout(()=>fin(null),1500)}catch{fin(null)}})}
+// signale de temps en temps à la page d'écriture que l'on est actif (elle ne se verrouille pas pendant la lecture)
+function keepAlive(){if(!window.opener)return;let last=0;
+ const f=()=>{const n=Date.now();if(n-last<30000)return;last=n;try{window.opener.postMessage({t:'alive'},location.origin)}catch{}};
+ ['pointerdown','keydown','scroll','touchstart'].forEach(e=>addEventListener(e,f,{capture:true,passive:true}))}

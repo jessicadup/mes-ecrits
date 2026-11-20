@@ -26,9 +26,11 @@ $('#unlock').onclick=async()=>{
  if(S.tok){try{TOK=(await unlock(S.tok,p)).t}catch{return m('Mot de passe incorrect.')}}
  else{if(p!==$('#gpw2').value)return m('Les deux mots de passe sont différents.');TOK=$('#token').value.trim();if(!TOK)return m('Collez le jeton GitHub.')}
  PW=p;m('Connexion…');
+ if(S.lp){try{LP=(await unlock(S.lp,p)).l}catch{}}
  try{await refresh(true);
-  if(!S.tok){const c=cfg();localStorage.setItem('cfg',JSON.stringify({owner:c.o,repo:c.r,repo2:c.r2,branch:c.b,tok:await lock({t:TOK},p)}))}
+  if(!S.tok){const c=cfg(),o={owner:c.o,repo:c.r,repo2:c.r2,branch:c.b,tok:await lock({t:TOK},p)};localStorage.setItem('cfg',JSON.stringify(o));Object.assign(S,o)}
   $('#gate').hidden=true;$('#app').hidden=false;$('#lock').hidden=false;document.body.classList.add('has-lock');
+  SE.start();if(LP)autoLieu();
  }catch(e){PW=null;m(bad(e))}};
 
 
@@ -169,13 +171,14 @@ const{list,sha}=await load(store,pw);let nl=list;
  }catch(e){msg(bad(e))}}
 
 // Le lieu sûr (fichier séparé, son propre mot de passe)
-function renderLieu(){const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
+function renderLieu(){if(LP&&PW&&lpSaved!==LP){lpSaved=LP;saveLP();syncAcces()}
+ const vis=textsOf(lcur).filter(t=>!(ownerOf(t)==='invite'&&t.draft)),m=t=>(t.date||'')+(t.draft?' · <span class="badge">brouillon</span>':'')+meta(t);
  $('#llist').innerHTML='<h2 class="rh">Mes textes</h2><p style="margin:.2rem 0 .8rem"><button class="ghost" data-a="cnew" data-sec="grivois" data-by="moi">+ Nouvelle rubrique</button></p>'
   +treeHtml({texts:vis.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)),cats:catsOf(lcur,'grivois','moi'),meta:m,scope:'lieu-moi',restTitle:TIROIR})
   +(vis.some(isDuo)?'<h2 class="rh">À quatre mains</h2>'+duoHtml({texts:vis,who:'moi'}):'')
   +'<h2 class="rh">Textes de l’invité (lecture seule)</h2>'
   +treeHtml({texts:vis.filter(t=>ownerOf(t)==='invite'),cats:catsOf(lcur,'grivois','invite'),meta:m,scope:'lieu-invite',restTitle:TIROIR,readonly:true});fillCats();draftBadge(nDraft())}
-$('#lieuOpen').onclick=async()=>{const p=prompt('Mot de passe du lieu sûr :');if(!p)return;
+$('#lieuOpen').onclick=async()=>{const p=LP||prompt('Mot de passe du lieu sûr :');if(!p)return;
  try{const{list}=await load('lieu',p);LP=p;lcur=list;renderLieu()}catch(e){msg(bad(e))}};
 $('#llist').onclick=ev=>treeAction(ev,'lieu');
 // Camembert de mémoire (site principal) et sauvegarde
@@ -235,3 +238,24 @@ const DU=makeDuo({who:'moi',ED,get:()=>lcur,bad,msg,upd,today,
   if(S.on&&S.tid&&LP)$('#pwrow').hidden=true;
   $('#rowpd').hidden=!!S.tid}});
 $('#duo').onchange=()=>DU.toggle();
+
+// Session : verrouillage après 5 minutes d'inactivité, bouton Verrouiller (le texte en cours est conservé), mots de passe transmis aux pages ouvertes d'ici (voir session.js)
+let lpSaved=null;
+const SE=makeSession({
+ isOn:()=>!!PW&&!$('#app').hidden,
+ creds:()=>({sp:PW,lp:LP}),
+ beforeLock:()=>{ED.exitFull()},
+ clear:()=>{PW=null;TOK='';LP=null;lpSaved=null},
+ async restore(p){const t=(await unlock(S.tok,p)).t;TOK=t;PW=p;if(S.lp){try{LP=(await unlock(S.lp,p)).l}catch{}}}});
+SE.wireLinks('.menu a.mbtn');
+$('#lock button').onclick=()=>SE.lock();
+// Le mot de passe du lieu est mémorisé sur cet appareil, chiffré par le mot de passe du site (comme le jeton)
+async function saveLP(){try{const e=await lock({l:LP},PW);S.lp=e;const c=JSON.parse(localStorage.getItem('cfg')||'{}');c.lp=e;localStorage.setItem('cfg',JSON.stringify(c))}catch{}}
+async function autoLieu(){try{const{list}=await load('lieu',LP);lcur=list;renderLieu()}catch{LP=null}}
+// Fichier acces.json (dépôt du lieu) : le mot de passe du site, chiffré par le mot de passe du lieu, pour que l'invité ouvre aussi le site sans le retaper
+async function syncAcces(){try{if(!PW||!LP||!TOK)return;const c=cfg(),u=`https://api.github.com/repos/${c.o}/${c.r2}/contents/acces.json`;
+ const r=await fetch(u+'?ref='+c.b+'&_='+Date.now(),{headers:hd(c)});let sha=null;
+ if(r.ok){const j=await r.json();sha=j.sha;try{const o=JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,''))));if((await unlock(o.enc,LP)).sp===PW)return}catch{}}
+ else if(r.status!==404)return;
+ const b={message:'Acces',branch:c.b,content:toB64(new TextEncoder().encode(JSON.stringify({v:2,enc:await lock({sp:PW},LP)})))};if(sha)b.sha=sha;
+ await fetch(u,{method:'PUT',headers:hd(c),body:JSON.stringify(b)})}catch{}}

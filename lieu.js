@@ -34,8 +34,9 @@ $('#unlock').onclick=async()=>{
  else{TOK=$('#token').value.trim();if(!TOK)return m('Collez le jeton d’accès.')}
  PW=p;m('Connexion…');
  try{await refresh(true);
-  if(!S.tok){const c=cfg();localStorage.setItem('cfgL',JSON.stringify({owner:c.o,repo2:c.r,tok:await lock({t:TOK},p)}))}
+  if(!S.tok){const c=cfg(),o={owner:c.o,repo2:c.r,tok:await lock({t:TOK},p)};localStorage.setItem('cfgL',JSON.stringify(o));Object.assign(S,o)}
   $('#gate').hidden=true;$('#app').hidden=false;$('#lock').hidden=false;document.body.classList.add('has-lock');
+  SE.start();loadSP();
  }catch(e){PW=null;m(bad(e))}};
 
 
@@ -152,3 +153,17 @@ const DU=makeDuo({who:'invite',ED,get:()=>all,bad,msg,upd,today,
  done(list){all=list;refresh()},
  page:S=>{$('#rowd').hidden=!!S.tid}});
 $('#duo').onchange=()=>DU.toggle();
+
+// Session : verrouillage après 5 minutes d'inactivité, bouton Verrouiller (le texte en cours est conservé), mots de passe transmis aux pages ouvertes d'ici (voir session.js)
+let SP=null;
+const SE=makeSession({
+ isOn:()=>!!PW&&!$('#app').hidden,
+ creds:()=>({lp:PW,sp:SP}),
+ beforeLock:()=>{ED.exitFull()},
+ clear:()=>{PW=null;TOK='';SP=null},
+ async restore(p){const t=(await unlock(S.tok,p)).t;TOK=t;PW=p;loadSP()}});
+SE.wireLinks('.menu a.mbtn');
+$('#lock button').onclick=()=>SE.lock();
+// Mot de passe du site, déposé par la propriétaire dans acces.json (chiffré par le mot de passe du lieu) : permet d'ouvrir aussi le site depuis cette page
+async function loadSP(){try{const c=cfg(),r=await fetch(`https://api.github.com/repos/${c.o}/${c.r}/contents/acces.json?ref=${c.b}&_=${Date.now()}`,{headers:hd(c)});
+ if(!r.ok)return;const j=await r.json(),o=JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,''))));SP=(await unlock(o.enc,PW)).sp||null}catch{}}
