@@ -10,7 +10,6 @@ const DEC=['<svg viewBox="0 0 44 56" width="44"><path d="M22 34C12 28 8 16 14 8M
 // Citations du sous-main : une au hasard à chaque ouverture (ajoutez les vôtres ici)
 const QUOTES=[['Écrire, c’est une façon de parler sans être interrompu.','Jules Renard'],['Ce que l’on conçoit bien s’énonce clairement, et les mots pour le dire arrivent aisément.','Boileau'],['Le style, c’est l’homme même.','Buffon'],['Polissez-le sans cesse, et le repolissez.','Boileau']];
 {const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];$('#qt').textContent='« '+q[0]+' »';$('#qa').textContent=q[1]}
-let CR={};askOpener().then(c=>{CR=c||{}});keepAlive();
 let D={books:[],cards:[]},WHO=null,TOK='',CS=null,cur=null,edit=false,eid=null,PG=[],ps=0;
 const ED=initEditor($('#edbox'),'Écrivez la fiche ici…');
 $('#fty').innerHTML=TYPES.map(t=>`<option>${t}</option>`).join('');
@@ -31,11 +30,8 @@ const askPw=()=>new Promise(res=>{const d=document.createElement('div');d.classN
 async function auth(){if(TOK)return true;
  const A=JSON.parse(localStorage.getItem('cfg')||'null'),L=JSON.parse(localStorage.getItem('cfgL')||'null');
  if(!(A&&A.tok)&&!(L&&L.tok)){toast('Pour écrire, ouvrez d’abord votre page admin ou invité sur cet appareil.');return false}
- const tryPw=async pw=>{for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS={owner:c.owner||OWNER,repo2:c.repo2||CFG.lieu};return true}catch{}}return false};
- // ouverte depuis une page d'écriture : mots de passe transmis en mémoire
- for(const p of[CR.sp,CR.lp])if(p&&await tryPw(p))return true;
  const pw=await askPw();if(!pw)return false;
- if(await tryPw(pw))return true;
+ for(const[c,w]of[[A,'moi'],[L,'invite']])if(c&&c.tok){try{TOK=(await unlock(c.tok,pw)).t;WHO=w;CS=c;return true}catch{}}
  toast('Mot de passe incorrect.');return false}
 const api=()=>`https://api.github.com/repos/${CS.owner}/${CS.repo2}/contents/bibliotheque.json`;
 const hd=()=>({Authorization:'Bearer '+TOK,Accept:'application/vnd.github+json'});
@@ -44,7 +40,7 @@ async function change(fn,ok){try{
  const r=await fetch(api()+'?ref='+CFG.branch+'&_='+Date.now(),{headers:hd()});let sha=null,d=norm(null);
  if(r.ok){const j=await r.json();sha=j.sha;d=norm(JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,'')))))}else if(r.status!==404)throw new Error('GitHub a répondu '+r.status+' : vérifiez le jeton.');
  fn(d);const b={message:'Bibliotheque',branch:CFG.branch,content:toB64(new TextEncoder().encode(JSON.stringify(d)))};if(sha)b.sha=sha;
- const w=await fetch(api(),{method:'PUT',headers:hd(),body:JSON.stringify(b)});if(!w.ok)throw new Error(w.status===404||w.status===403||w.status===401?'Dépôt introuvable ou jeton sans accès ('+w.status+'). Vérifiez que le jeton couvre bien le dépôt « '+CS.repo2+' » avec « Contents : Read and write ».':'L’enregistrement a échoué ('+w.status+'). Réessayez.');
+ const w=await fetch(api(),{method:'PUT',headers:hd(),body:JSON.stringify(b)});if(!w.ok)throw new Error('L’enregistrement a échoué ('+w.status+'). Réessayez.');
  D=d;render();toast(ok);return true}catch(e){toast(e.message);return false}}
 
 // Étagères
@@ -69,7 +65,7 @@ function paginate(cs,res){const pr=$('#pr'),m=document.createElement('div');m.cl
 function showPages(){const n=PG.length,sp=one()?n:Math.ceil(n/2),H=i=>PG[i]?PG[i].map(x=>x.h).join(''):'';
  ps=Math.max(0,Math.min(ps,Math.max(sp-1,0)));
  $('#pl').innerHTML=one()?'':H(ps*2);$('#pr').innerHTML=H(one()?ps:ps*2+1)||(n?'':`<p class="empty">${cur?'Ce livre est encore vide.':'Aucun résultat.'}</p>`);
- $('#pn').textContent=sp?'Page '+(ps+1)+' / '+sp:'';$('#pv').disabled=ps<=0;$('#nx').disabled=ps>=sp-1;
+ $('#pn').textContent=sp?'Page '+(ps+1)+' / '+sp:'';$('#pv').disabled=ps<=0;$('#nx').disabled=ps>=sp-1;$('#cpv').hidden=ps<=0;$('#cnx').hidden=ps>=sp-1;
  if(!cur&&!n)$('#pl').innerHTML=''}
 function turn(d){ps+=d;const r=$('#pr');r.classList.remove('turn');void r.offsetWidth;if(!reduce)r.classList.add('turn');showPages()}
 function view(fid){const res=!cur,ba=$('#bact');let cs;
@@ -94,6 +90,7 @@ function openBook(id,el,fid){const b=D.books.find(x=>x.id===id);if(!b)return;cur
 function closeBook(){ED.exitFull();cur=null;edit=false;eid=null;$('#veil').hidden=true;$('#veil').classList.remove('full');$('#bfs').textContent='Plein écran';$('#form').hidden=true;$('#pen').setAttribute('aria-pressed','false')}
 $('#bfs').onclick=()=>{const f=$('#veil').classList.toggle('full');$('#bfs').textContent=f?'Quitter le plein écran':'Plein écran';setTimeout(()=>view(),60)};
 $('#pv').onclick=()=>turn(-1);$('#nx').onclick=()=>turn(1);
+$('#cpv').onclick=()=>turn(-1);$('#cnx').onclick=()=>turn(1);
 
 // Fiches
 function openForm(c){$('#form').hidden=false;$('#ftit').value=c?c.title:'';$('#fty').value=c?c.type:TYPES[0];ED.set(c?(c.html||plainToHtml(c.body)):'');eid=c?c.id:null;
