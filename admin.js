@@ -244,6 +244,7 @@ let lpSaved=null;
 const SE=makeSession({
  isOn:()=>!!PW&&!$('#app').hidden,
  creds:()=>({sp:PW,lp:LP}),
+ async onLP(pw){if(LP||!PW||pw.length<10)return;try{const r=await load('lieu',pw);if(!r.sha)return;LP=pw;lcur=r.list;renderLieu()}catch{}},
  beforeLock:()=>{ED.exitFull()},
  clear:()=>{PW=null;TOK='';LP=null;lpSaved=null},
  async restore(p){const t=(await unlock(S.tok,p)).t;TOK=t;PW=p;if(S.lp){try{LP=(await unlock(S.lp,p)).l}catch{}}}});

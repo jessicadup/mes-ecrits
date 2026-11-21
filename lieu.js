@@ -158,7 +158,7 @@ $('#duo').onchange=()=>DU.toggle();
 let SP=null;
 const SE=makeSession({
  isOn:()=>!!PW&&!$('#app').hidden,
- creds:()=>({lp:PW,sp:SP}),
+ async creds(){if(!SP)await loadSP();return{lp:PW,sp:SP}},
  beforeLock:()=>{ED.exitFull()},
  clear:()=>{PW=null;TOK='';SP=null},
  async restore(p){const t=(await unlock(S.tok,p)).t;TOK=t;PW=p;loadSP()}});
