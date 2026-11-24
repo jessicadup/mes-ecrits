@@ -42,9 +42,10 @@ $('#unlock').onclick=async()=>{
 
 // Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
 function view(v){
- $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;document.body.classList.add('has-lock');
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#v-stats').hidden=v!=='stats';$('#lock').hidden=false;document.body.classList.add('has-lock');
  document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='list')refresh();
+ if(v==='stats')renderStats();
 }
 $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.v==='new'&&(editId||DU.on()))reset();
@@ -94,16 +95,19 @@ async function send(draft){
  if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » ?`))return;
  try{msg('Enregistrement en cours…');
   const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;{const lhv=ED.getLH();if(lhv)e.lh=lhv}
-  const i=list.findIndex(x=>x.id===id&&x.by==='invite');placeText(list,e);i>=0?list[i]=e:list.push(e);
+  const i=list.findIndex(x=>x.id===id&&x.by==='invite');{const wl=statLog(i>=0?list[i]:null,text);if(wl)e.wl=wl}placeText(list,e);i>=0?list[i]=e:list.push(e);
   await save(list,sha,'Mise a jour');markSeen(e);openAt('lieu-invite',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié.');refresh();
    if(wasEdit){ED.exitFull();view('list');scrollTo(0,0)}return true;
  }catch(err){msg(bad(err))}}
 $('#pub').onclick=async()=>{if(DU.on()){if(await DU.send()){reset();msg('Publié.');ED.exitFull();view('list');scrollTo(0,0)}return}if(await send(false))ED.exitFull()};
 $('#draft').onclick=async()=>{if(DU.on())return;if(await send(true))ED.exitFull()};
 
-$('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
+$('#list').onclick=async ev=>{const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;
  const a=b.dataset.a,id=b.dataset.id,own=x=>!!x&&ownerOf(x)==='invite',ownT=x=>!!x&&!isCat(x)&&(ownerOf(x)==='invite'||isDuo(x));
  if(a==='dcont'||a==='ddel'){await DU.act(a,id);return}
+ if(a==='tedit'){if(!ownT(all.find(x=>x.id===id)))return;
+  editTitleInline(b,async v=>{try{const{list,sha}=await load(),t=list.find(x=>x.id===id&&ownT(x));if(!t)return msg('Texte introuvable.');
+   t.title=v;await save(list,sha,'Mise a jour');msg('Titre modifié.');all=list;refresh()}catch(e){msg(bad(e));refresh()}});return}
  try{
   if(a==='edit'){const t=all.find(x=>x.id===id&&x.by==='invite');if(!t)return;
    editId=t.id;DU.reset();$('#duorow').hidden=true;$('#date').value=t.date||today();$('#title').value=t.title;ED.set(t.html||plainToHtml(t.body));$('#catg').value=t.cat||'';ED.setLH(t.lh||null);
@@ -112,7 +116,6 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
   if(a==='del'){const t0=all.find(x=>x.id===id&&own(x));if(!t0)return;if(!await confirmBox('Supprimer définitivement « '+t0.title+' » ?','Supprimer'))return;text='Texte supprimé.'}
   else if(a==='trub'){const t0=all.find(x=>x.id===id&&!isCat(x)&&own(x));if(!t0)return;
    dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(all,'grivois','invite').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
-  else if(a==='ttitle'){const t0=all.find(x=>x.id===id&&ownT(x));if(!t0)return;name=prompt('Nouveau titre :',t0.title);if(name==null||!name.trim())return;text='Titre modifié.'}
   else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
   else if(a==='cren'){const c=all.find(x=>x.id===id);if(!own(c))return;name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
   else if(a==='cdel'){const c=all.find(x=>x.id===id);if(!own(c))return;
@@ -122,7 +125,6 @@ $('#list').onclick=async ev=>{const b=ev.target.closest('button[data-a]');if(!b|
    text='Rubrique supprimée.'}
   const{list,sha}=await load();let nl=list;const tg=list.find(x=>x.id===id);
   if(a==='del')nl=list.filter(x=>!(x.id===id&&x.by==='invite'));
-  else if(a==='ttitle'){const t=list.find(x=>x.id===id&&ownT(x));if(!t)return msg('Texte introuvable.');t.title=name.trim()}
   else if(a==='cnew')addCat(list,'grivois',name,'invite');
   else if(a==='cren'&&own(tg))renameCat(list,id,name);
   else if(a==='cdel'&&own(tg)){if(dest)moveTexts(list,id,dest,'grivois','invite');removeCat(list,id)}
@@ -167,3 +169,10 @@ $('#lock button').onclick=()=>SE.lock();
 // Mot de passe du site, déposé par la propriétaire dans acces.json (chiffré par le mot de passe du lieu) : permet d'ouvrir aussi le site depuis cette page
 async function loadSP(){try{const c=cfg(),r=await fetch(`https://api.github.com/repos/${c.o}/${c.r}/contents/acces.json?ref=${c.b}&_=${Date.now()}`,{headers:hd(c)});
  if(!r.ok)return;const j=await r.json(),o=JSON.parse(new TextDecoder().decode(fromB64(j.content.replace(/\n/g,''))));SP=(await unlock(o.enc,PW)).sp||null}catch{}}
+
+// Statistiques d'écriture : les miennes (mes textes du lieu + mes passages à quatre mains)
+function renderStats(){
+ const mc=catsOf(all,'grivois','invite'),lt=textsOf(all);
+ const entries=[...lt.filter(t=>t.by==='invite').map(t=>({t,rub:(mc.find(c=>c.id===t.cat)||{}).name||TIROIR})),
+  ...lt.filter(isDuo).map(t=>({t,rub:'À quatre mains'}))];
+ statsRender({box:$('#statsbox'),entries,who:'invite'})}

@@ -74,6 +74,12 @@ const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 .ca .item.row>.bb button[disabled],.ca-t button[disabled]{opacity:.35;cursor:default}
 @media(max-width:560px){.ca .item.row{flex-direction:column;align-items:flex-start}.ca .item.row>.bb{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){.ca-b,.ca-a{transition:none}.ca-i{transition:none}}
+.ca .item.row b.tt[data-a]{display:inline-block;max-width:100%;cursor:text;border-bottom:1px dashed transparent}
+.ca .item.row b.tt[data-a]:hover{border-bottom-color:var(--accent,#7a6a80)}
+.ca .item.row b.tt[data-a]:after{content:" ✎";font-size:.7em;opacity:0}
+.ca .item.row b.tt[data-a]:hover:after{opacity:.6}
+@media(hover:none){.ca .item.row b.tt[data-a]:after{opacity:.4}}
+.tt-in{display:block;width:100%;box-sizing:border-box;margin:0;padding:.2rem .5rem;font:inherit;font-weight:500}
 .ca-d{font-size:.8rem;color:var(--accent,#7a6a80);border:1px solid var(--accent,#7a6a80);border-radius:9px;padding:0 .5rem;white-space:nowrap}
 .ca-sum{margin:0 0 .8rem;padding:.55rem .9rem;border-left:4px solid var(--accent,#7a6a80);background:rgba(122,106,128,.14);border-radius:0 6px 6px 0;font-size:.92rem}
 .ca-st{margin:.9rem 0 .2rem;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--soft,#6f7780)}
@@ -100,7 +106,7 @@ document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if
 // o:{texts,cats,meta,scope,restTitle,readonly}
 function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
- const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
+ const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b class="tt"${ro?'':` data-a="tedit" data-id="${t.id}" title="Cliquer pour modifier le titre"`}>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
  const acc=(key,name,n,tools,inner,dn)=>{const op=CAOPEN===key;
   return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${nmH(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span>${dn?`<span class="ca-d">✎ ${dn} brouillon${dn>1?'s':''}</span>`:''}</button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
  // brouillons d'abord (section à part), puis textes publiés ; les flèches ne concernent que les publiés
@@ -167,9 +173,27 @@ function duoHtml(o){const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':
  const items=o.texts.filter(isDuo).sort(byOrder);if(!items.length)return'';
  const key='duo:quatre',op=CAOPEN===key,n=items.length;
  const row=t=>{const own=t.parts.some(p=>p.by===o.who),np=t.parts.length,w=t.n?t.n.w:0;
-  return `<div class="item row"><div><b>${E(t.title)}</b><span>${E(t.date||'')} · ${np} passage${np>1?'s':''} · ${w.toLocaleString('fr-FR')} mot${w>1?'s':''}</span></div><div class="bb"><button class="ghost" data-a="dcont" data-id="${t.id}">Continuer</button><button class="ghost" data-a="ttitle" data-id="${t.id}">Titre</button>${own?`<button class="ghost" data-a="ddel" data-id="${t.id}">Supprimer</button>`:''}</div></div>`};
+  return `<div class="item row"><div><b class="tt" data-a="tedit" data-id="${t.id}" title="Cliquer pour modifier le titre">${E(t.title)}</b><span>${E(t.date||'')} · ${np} passage${np>1?'s':''} · ${w.toLocaleString('fr-FR')} mot${w>1?'s':''}</span></div><div class="bb"><button class="ghost" data-a="dcont" data-id="${t.id}">Continuer</button>${own?`<button class="ghost" data-a="ddel" data-id="${t.id}">Supprimer</button>`:''}</div></div>`};
  return `<div class="cons"><div class="ca" data-k="${key}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">À quatre mains</span><span class="ca-c">${n} texte${n>1?'s':''}</span></button><div class="ca-b${op?' open':''}"><div class="ca-i">${items.map(row).join('')}</div></div></div></div>`}
 
 // Pastille « ✎ n » sur le bouton « Consultation des textes » : brouillons en attente
 function draftBadge(n){const b=document.querySelector('.menu button[data-v=list]');if(!b)return;
  b.innerHTML='Consultation des textes'+(n?' <span class="nbd">✎ '+n+'</span>':'')}
+
+// Titre modifiable d'un clic sur son nom (consultation des textes) : Entrée ou clic ailleurs enregistre, Échap annule
+function editTitleInline(b,save){if(b.querySelector('input'))return;
+ const old=b.textContent,inp=document.createElement('input');inp.type='text';inp.value=old;inp.className='tt-in';inp.setAttribute('aria-label','Titre du texte');
+ b.textContent='';b.appendChild(inp);inp.focus();inp.select();
+ let done=false;
+ const end=ok=>{if(done)return;done=true;const v=inp.value.trim();if(ok&&v&&v!==old){b.textContent=v;save(v)}else b.textContent=old};
+ inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();end(true)}else if(e.key==='Escape'){e.preventDefault();end(false)}};
+ inp.onblur=()=>end(true);
+ inp.onclick=e=>e.stopPropagation()}
+
+// --- Statistiques : journal des mots ajoutés à chaque enregistrement (champ wl : {date: mots}) ---
+const wordsOf=s=>(String(s||'').trim().match(/\S+/g)||[]).length;
+function localDay(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+// prev : version précédente du texte (ou du passage) ; body : texte enregistré. Renvoie le journal mis à jour.
+function statLog(prev,body){const wl={...((prev&&prev.wl)||{})},add=Math.max(0,wordsOf(body)-(prev?wordsOf(prev.body):0));
+ if(add>0){const d=localDay();wl[d]=(wl[d]||0)+add}
+ return Object.keys(wl).length?wl:undefined}

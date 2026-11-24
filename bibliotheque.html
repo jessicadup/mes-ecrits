@@ -58,14 +58,6 @@ h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0
 .cf,.cb{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .cf{display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;background:var(--cc,#c4977a);border:6px double rgba(255,255,255,.5);border-radius:0 8px 8px 0;color:#fdf8ee;font:600 clamp(1.6rem,4vw,2.6rem)/1.15 'Dancing Script',cursive}
 .cb{transform:rotateY(180deg);width:100%;border-radius:6px 0 0 6px;box-shadow:inset -16px 0 18px -14px rgba(90,60,40,.3)}
-.corner{position:absolute;bottom:0;width:3.6rem;height:3.6rem;padding:0;border:0;background:none;z-index:6;cursor:pointer}
-.corner[hidden],.bk.closed .corner{display:none}
-.corner.r{right:0}.corner.l{left:0}
-.corner:before{content:"";position:absolute;bottom:0;width:1.6rem;height:1.6rem;transition:width .25s,height .25s;filter:drop-shadow(-2px -2px 3px rgba(90,60,40,.35));animation:lift 2.4s ease-in-out infinite}
-.corner.r:before{right:0;background:linear-gradient(135deg,transparent 50%,#d9c39b 50%);border-radius:0 0 6px 0}
-.corner.l:before{left:0;background:linear-gradient(225deg,transparent 50%,#d9c39b 50%);border-radius:0 0 0 6px}
-.corner:hover:before,.corner:focus-visible:before{width:2.8rem;height:2.8rem;animation:none}
-@keyframes lift{0%,100%{width:1.6rem;height:1.6rem}50%{width:2.1rem;height:2.1rem}}
 #nav{display:flex;align-items:center;gap:1rem;color:var(--soft)}#nav button[disabled]{opacity:.35}
 .fc{break-inside:avoid;margin:0 0 1.3rem;padding-bottom:.8rem;border-bottom:1px dotted var(--line)}
 .ft{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem}.ft b{font:600 1.3rem var(--serif)}
@@ -95,8 +87,7 @@ h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0
  <div id="bar"><h2 id="bt"></h2><span id="bact" hidden></span><button id="bfs" type="button" class="ghost">Plein écran</button><button id="bx" type="button" class="ghost" aria-label="Refermer le livre">✕</button></div>
  <div id="book" role="dialog" aria-modal="true" aria-labelledby="bt"><div class="bk closed" id="bk">
   <div class="pp" id="pr"></div>
-  <div class="cover"><div class="cf" id="cf"></div><div class="cb pp" id="pl"></div></div>
-  <button id="cpv" class="corner l" type="button" aria-label="Page précédente" hidden></button><button id="cnx" class="corner r" type="button" aria-label="Page suivante" hidden></button></div></div>
+  <div class="cover"><div class="cf" id="cf"></div><div class="cb pp" id="pl"></div></div></div></div>
  <div id="nav"><button id="pv" type="button" aria-label="Page précédente">‹</button><span id="pn"></span><button id="nx" type="button" aria-label="Page suivante">›</button></div>
 </div>
 <div id="form" hidden><input id="ftit" placeholder="Le mot ou le titre de la fiche" aria-label="Titre de la fiche"><select id="fty" aria-label="Type de fiche"></select><div id="edbox"></div>
@@ -106,5 +97,5 @@ h1{font:600 clamp(2.2rem,6vw,3.2rem)/1.1 'Dancing Script',cursive;margin:.3rem 0
  <div class="right"><button id="pen" class="tool" type="button" aria-label="Prendre la plume pour écrire" aria-pressed="false"><svg viewBox="0 0 80 80" width="84" height="84" aria-hidden="true"><rect x="16" y="38" width="30" height="38" rx="6" fill="#e3b6a0"/><path d="M30 40L24 8M38 40L50 10" stroke="#a8785c" stroke-width="3" stroke-linecap="round"/><path d="M34 40L58 6c3-4 8-2 6 3L44 40z" fill="#fdf8ee" stroke="#c9a283" stroke-width="2"/><rect x="54" y="54" width="20" height="22" rx="5" fill="#46566a"/><rect x="59" y="47" width="10" height="9" fill="#7c8da3"/></svg></button>
  <span class="cupw"><i class="st"></i><i class="st"></i><i class="st"></i><svg viewBox="0 0 80 64" width="84" height="68" aria-hidden="true"><ellipse cx="38" cy="56" rx="32" ry="6" fill="#ecd9c4"/><path d="M12 24h50l-4 28H16z" fill="#fdf8ee" stroke="#c9a283" stroke-width="2"/><path d="M62 30h6a8 8 0 0 1 0 16h-8" fill="none" stroke="#c9a283" stroke-width="3"/><ellipse cx="37" cy="24" rx="25" ry="4" fill="#8a5a3b"/></svg></span></div></div>
 <p id="toast" role="status" hidden></p>
-<script src="config.js?v=20261114f"></script><script src="crypto.js?v=20261114f"></script><script src="rich.js?v=20261114f"></script><script src="biblio.js?v=20261114f"></script>
+<script src="config.js?v=20261123b"></script><script src="crypto.js?v=20261123b"></script><script src="rich.js?v=20261123b"></script><script src="biblio.js?v=20261123b"></script>
 </body></html>

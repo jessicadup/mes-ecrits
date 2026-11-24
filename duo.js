@@ -46,9 +46,9 @@ function makeDuo(o){
    if(S.tid){
     t=find(list,S.tid);if(!t){o.msg('Ce texte n’existe plus.');return}
     if(S.pid){const i=t.parts.findIndex(x=>x.id===S.pid&&x.by===who);if(i<0){o.msg('Passage introuvable.');return}
-     part.date=t.parts[i].date||part.date;t.parts[i]=part}
-    else t.parts.push(part)}
-   else{const c=duoCat(list);t={id:Date.now().toString(36),date:o.date(),title,by:'duo',duo:true,cat:c.id,parts:[part]};list.push(t)}
+     part.date=t.parts[i].date||part.date;{const wl=statLog(t.parts[i],text);if(wl)part.wl=wl}t.parts[i]=part}
+    else{{const wl=statLog(null,text);if(wl)part.wl=wl}t.parts.push(part)}}
+   else{{const wl=statLog(null,text);if(wl)part.wl=wl}const c=duoCat(list);t={id:Date.now().toString(36),date:o.date(),title,by:'duo',duo:true,cat:c.id,parts:[part]};list.push(t)}
    duoCalc(t);
    await o.sv(list,sha);markSeen(t);o.done(list);openAt('duo','quatre');return true
   }catch(e){o.msg(o.bad(e))}}
