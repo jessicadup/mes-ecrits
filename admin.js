@@ -36,9 +36,10 @@ $('#unlock').onclick=async()=>{
 
 // Menu : Nouveau texte / Consultation / Voir le site (rien d'autre n'est affiché à la connexion)
 function view(v){
- $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#lock').hidden=false;document.body.classList.add('has-lock');
+ $('#v-new').hidden=v!=='new';$('#v-list').hidden=v!=='list';$('#v-stats').hidden=v!=='stats';$('#lock').hidden=false;document.body.classList.add('has-lock');
  document.querySelectorAll('.menu button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
  if(v==='list')refresh();
+ if(v==='stats')renderStats();
 }
 $('.menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.v==='new'&&(editId||DU.on()))reset();
@@ -90,11 +91,11 @@ async function send(draft){
   if(cat==='grivois'){
    const p=$('#pw').value||LP||'';if(p.length<10)return msg('Mot de passe du lieu sûr : 10 caractères minimum.');
    msg('Enregistrement en cours…');
-   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};if(cg)e.cat=cg;placeText(list,e);
+   const{list,sha}=await load('lieu',p),i=list.findIndex(x=>x.id===id),e={...base,by:(i>=0&&list[i].by)||'moi'};if(cg)e.cat=cg;{const wl=statLog(i>=0?list[i]:null,text);if(wl)e.wl=wl}placeText(list,e);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour','lieu',p);markSeen(e);LP=p;lcur=list;renderLieu();
   }else{
    msg('Enregistrement en cours…');
-   const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);if(cg)e.cat=cg;placeText(list,e);
+   const{list,sha}=await load(),e={...base,category:cat},i=list.findIndex(x=>x.id===id);if(cg)e.cat=cg;{const wl=statLog(i>=0?list[i]:null,text);if(wl)e.wl=wl}placeText(list,e);
    i>=0?list[i]=e:list.push(e);await save(list,sha,'Mise a jour du contenu');markSeen(e);refresh();
   }
   openAt(cat==='grivois'?'lieu-moi':'main',cg);reset();msg(draft?'Brouillon enregistré. Il n’est pas visible sur le site.':'Publié. Le texte apparaît sur le site dans une à deux minutes.');
@@ -133,12 +134,14 @@ $('#pw').onchange=async()=>{const p=$('#pw').value;if(p.length<10||$('#cat').val
 
 // Actions de la consultation (textes et catégories), pour le site principal ('main') et le lieu sûr ('lieu')
 async function treeAction(ev,store){
- const b=ev.target.closest('button[data-a]');if(!b||b.disabled)return;
+ const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;
  const a=b.dataset.a,id=b.dataset.id,L=store==='lieu',pw=L?LP:PW,src=()=>L?lcur:cur;
  const sec=L?'grivois':'main',after=async list=>{if(L){lcur=list;renderLieu()}else await refresh()};
   if(a==='dcont'||a==='ddel'){await DU.act(a,id);return}
   if(b.dataset.by==='invite')return;
   {const tg=id&&src().find(x=>x.id===id);if(tg&&ownerOf(tg)==='invite')return}
+  if(a==='tedit'){editTitleInline(b,async v=>{try{const{list,sha}=await load(store,pw),t=list.find(x=>x.id===id&&!isCat(x));if(!t)return msg('Texte introuvable.');
+    t.title=v;await save(list,sha,'Mise a jour',store,pw);msg('Titre modifié.');await after(list)}catch(e){msg(bad(e));await after(src())}});return}
   try{
   if(a==='edit'){const t=src().find(x=>x.id===id);if(!t)return;
    editId=t.id;DU.reset();$('#duorow').hidden=true;$('#cat').value=L?'grivois':'main';$('#cat').onchange();$('#date').value=t.date||today();
@@ -148,7 +151,6 @@ async function treeAction(ev,store){
   if(a==='del'){const t0=src().find(x=>x.id===id);if(!await confirmBox('Supprimer définitivement « '+(t0?t0.title:'ce texte')+' » ?','Supprimer'))return;text='Texte supprimé.'}
    else if(a==='trub'){const t0=src().find(x=>x.id===id);if(!t0)return;
     dest=await askRub({text:'Où placer « '+t0.title+' » ?',ok:'Déplacer',others:catsOf(src(),sec,'moi').filter(c=>c.id!==t0.cat),none:!!t0.cat,pref:'cat'});if(!dest)return;text='Texte déplacé.'}
-  else if(a==='ttitle'){const t0=src().find(x=>x.id===id&&!isCat(x));if(!t0)return;name=prompt('Nouveau titre :',t0.title);if(name==null||!name.trim())return;text='Titre modifié.'}
   else if(a==='cnew'){name=prompt('Nom de la nouvelle rubrique :');if(!name||!name.trim())return;text='Rubrique créée.'}
   else if(a==='cren'){const c=src().find(x=>x.id===id);name=prompt('Nouveau nom de la rubrique :',c?c.name:'');if(!name||!name.trim())return;text='Rubrique renommée.'}
   else if(a==='cdel'){const c=src().find(x=>x.id===id);
@@ -158,7 +160,6 @@ async function treeAction(ev,store){
     text='Rubrique supprimée.'}
 const{list,sha}=await load(store,pw);let nl=list;
   if(a==='del')nl=list.filter(x=>x.id!==id);
-  else if(a==='ttitle'){const t=list.find(x=>x.id===id&&!isCat(x));if(!t)return msg('Texte introuvable.');t.title=name.trim()}
   else if(a==='cnew')addCat(list,b.dataset.sec,name,b.dataset.by);
   else if(a==='cren')renameCat(list,id,name);
   else if(a==='cdel'){if(dest)moveTexts(list,id,dest,sec);removeCat(list,id)}
@@ -260,3 +261,11 @@ async function syncAcces(){try{if(!PW||!LP||!TOK)return;const c=cfg(),u=`https:/
  else if(r.status!==404)return;
  const b={message:'Acces',branch:c.b,content:toB64(new TextEncoder().encode(JSON.stringify({v:2,enc:await lock({sp:PW},LP)})))};if(sha)b.sha=sha;
  await fetch(u,{method:'PUT',headers:hd(c),body:JSON.stringify(b)})}catch{}}
+
+// Statistiques d'écriture : les miennes (site principal + mes textes du lieu + mes passages à quatre mains)
+function renderStats(){
+ const mc=catsOf(cur,'main'),lt=textsOf(lcur);
+ const entries=[...textsOf(cur).filter(t=>t.category!=='grivois').map(t=>({t,rub:(mc.find(c=>c.id===t.cat)||{}).name||TIROIR})),
+  ...lt.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)).map(t=>({t,rub:'Le lieu sûr'})),
+  ...lt.filter(isDuo).map(t=>({t,rub:'À quatre mains'}))];
+ statsRender({box:$('#statsbox'),entries,who:'moi',note:LP?'':'Le lieu sûr n’est pas encore pris en compte : ouvrez-le une fois (page « Consultation des textes », bouton « Afficher les textes du lieu sûr »).'})}

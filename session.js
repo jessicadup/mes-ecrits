@@ -31,12 +31,11 @@ function makeSession(o){
   d.querySelector('#lockpw').focus()}
 
  // pages ouvertes depuis cette page : seules celles-là peuvent demander les mots de passe
- addEventListener('message',async ev=>{const m=ev.data;
+ addEventListener('message',ev=>{const m=ev.data;
   if(ev.origin!==location.origin||!m||!kids.has(ev.source))return;
   if(m.t==='alive'){bump();return}
-  if(m.t==='lp'){if(on()&&o.onLP&&typeof m.lp==='string')o.onLP(m.lp);return}
   if(m.t!=='need-creds')return;
-  const c=on()?await o.creds():null;
+  const c=on()?o.creds():null;
   ev.source.postMessage({t:'creds',sp:(c&&c.sp)||null,lp:(c&&c.lp)||null},location.origin)});
  function open(url){const w=window.open(url,'_blank');if(w)kids.add(w);return w}
  function wireLinks(sel){document.querySelectorAll(sel).forEach(a=>a.addEventListener('click',e=>{

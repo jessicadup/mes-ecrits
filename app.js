@@ -122,7 +122,7 @@ function openDoor(){
  d.onclick=e=>{if(e.target===d)close()};
  d.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
  d.querySelector('form').onsubmit=async e=>{e.preventDefault();$('#dm').textContent='Vérification…';
-  try{const pw=$('#dp').value;await loadLieu(pw);close();try{if(window.opener&&!window.opener.closed)window.opener.postMessage({t:'lp',lp:pw},location.origin)}catch{}}
+  try{await loadLieu($('#dp').value);close()}
   catch{$('#dm').textContent='Mot de passe incorrect.'}};
 }
 addEventListener('hashchange',route);
