@@ -176,3 +176,6 @@ function renderStats(){
  const entries=[...lt.filter(t=>t.by==='invite').map(t=>({t,rub:(mc.find(c=>c.id===t.cat)||{}).name||TIROIR})),
   ...lt.filter(isDuo).map(t=>({t,rub:'À quatre mains'}))];
  statsRender({box:$('#statsbox'),entries,who:'invite'})}
+
+// Minuteur tomate et suivi de la session d'écriture (voir pomo.js)
+const PO=makePomo({ED,key:'pomoL',msg});

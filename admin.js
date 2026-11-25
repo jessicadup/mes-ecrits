@@ -269,3 +269,6 @@ function renderStats(){
   ...lt.filter(t=>ownerOf(t)!=='invite'&&!isDuo(t)).map(t=>({t,rub:'Le lieu sûr'})),
   ...lt.filter(isDuo).map(t=>({t,rub:'À quatre mains'}))];
  statsRender({box:$('#statsbox'),entries,who:'moi',note:LP?'':'Le lieu sûr n’est pas encore pris en compte : ouvrez-le une fois (page « Consultation des textes », bouton « Afficher les textes du lieu sûr »).'})}
+
+// Minuteur tomate et suivi de la session d'écriture (voir pomo.js)
+const PO=makePomo({ED,key:'pomo',msg});
