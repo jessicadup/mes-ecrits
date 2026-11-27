@@ -38,7 +38,7 @@ function makeDuo(o){
   const title=q('#title').value.trim(),text=ED.text(),html=ED.html();
   if(!text){o.msg('Il manque le texte.');return}
   if(!title){o.msg('Il manque le titre.');return}
-  if(!await confirmBox(S.tid?`Mettre en ligne ce passage de « ${title} » ?`:`Mettre en ligne « ${title} » (À quatre mains) ?`))return;
+  if(!await confirmBox((S.tid?`Mettre en ligne ce passage de « ${title} » ?`:`Mettre en ligne « ${title} » (À quatre mains) ?`)+annWarn(html)))return;
   try{
    o.msg('Enregistrement en cours…');
    const{list,sha}=await o.ld(),part={id:S.pid||uid(),by:who,date:o.today(),html,body:text},lhv=ED.getLH();if(lhv)part.lh=lhv;

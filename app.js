@@ -12,7 +12,7 @@ const KNOT={e:'<svg class="knot" viewBox="0 0 32 16" width="34" height="17" styl
 KNOT.d='<span style="white-space:nowrap">'+KNOT.e.replace('margin-right:.5em','margin-right:.15em')+KNOT.c+'</span>';
 const knotOf=k=>k.startsWith('lieu-duo')?KNOT.d:k.startsWith('lieu-invite')?KNOT.c:k.startsWith('lieu-moi')?KNOT.e:'';
 const sortD=l=>[...l].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-const wc=s=>(String(s).match(/\S+/g)||[]).length;
+const wc=wordsOf;
 const rt=s=>'⏳ '+Math.max(1,Math.ceil(wc(s)/200))+' min de lecture';
 const nrm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const list=(items,sc)=>{if(!items.length)return '<p class="empty">Rien ici pour l’instant.</p>';const S=seenSet();return items.map(t=>{const v=plain[t.id]||t;return `<a class="item" href="#/t/${t.id}"><b>${esc(v.title)}${isNew(t,S)?'<span class="nw">nouveau</span>':''}</b><span>${sc?rubName(t)+' · ':''}${fmt(t.date)} · ${rt(v.body)}</span></a>`}).join('')};

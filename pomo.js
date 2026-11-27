@@ -45,7 +45,7 @@ function makePomo(o){
  ed.addEventListener('ed-rebase',()=>{needRebase=true;dirty=true});
  function count(){
   if(!(dirty||needRebase))return;
-  const t=ed.innerText!==undefined?ed.innerText:ed.textContent,c=t.replace(/[\r\n]+/g,'').length,w=(t.match(/\S+/g)||[]).length;
+  const t=ed.innerText!==undefined?ed.innerText:ed.textContent,c=t.replace(/[\r\n]+/g,'').length,w=wordsOf(t);
   if(needRebase){needRebase=false}
   else if(S.sess){const dc=Math.max(0,c-lc),dw=Math.max(0,w-lw);if(dc){S.sess.c+=dc;pend.c+=dc}if(dw){S.sess.w+=dw;pend.w+=dw}}
   lc=c;lw=w;dirty=false}

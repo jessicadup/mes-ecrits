@@ -15,7 +15,7 @@ function cleanStyle(el,out){
  if(/underline/.test((s.textDecoration||'')+(s.textDecorationLine||'')))css+='text-decoration:underline;';
  if(css)out.setAttribute('style',css);
 }
-function cleanNode(src,dst){
+function cleanNode(src,dst,keep){
  for(const n of [...src.childNodes]){
   if(n.nodeType===3){dst.appendChild(document.createTextNode(n.nodeValue));continue}
   if(n.nodeType!==1)continue;
@@ -23,12 +23,20 @@ function cleanNode(src,dst){
   if(/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|SVG|MATH)$/.test(t))continue;
   if(t==='FONT'){const s=document.createElement('span'),c=n.getAttribute('color'),f=fontKey(n.getAttribute('face')),z=n.getAttribute('size');
    if(c&&RCOLOR.test(c))s.style.color=c;if(f)s.style.fontFamily=FONTS[f];if(SIZE_EM[z])s.style.fontSize=SIZE_EM[z];
-   cleanNode(n,s);dst.appendChild(s);continue}
-  if(RTAGS.has(t)){const e=document.createElement(t);if(/^(SPAN|P|DIV|LI)$/.test(t))cleanStyle(n,e);cleanNode(n,e);dst.appendChild(e)}
-  else cleanNode(n,dst);
+   cleanNode(n,s,keep);dst.appendChild(s);continue}
+  if(t==='SPAN'&&n.getAttribute('data-ann')){
+   const ty=n.getAttribute('data-ann');
+   if(!keep||!/^(todo|syn)$/.test(ty)||!n.textContent){cleanNode(n,dst,keep);continue}
+   const e=document.createElement('span');e.setAttribute('data-ann',ty);
+   const id=(n.getAttribute('data-aid')||'').replace(/[^a-z0-9]/gi,'').slice(0,24);if(id)e.setAttribute('data-aid',id);
+   const nt=(n.getAttribute('data-note')||'').slice(0,300);if(nt)e.setAttribute('data-note',nt);
+   cleanStyle(n,e);cleanNode(n,e,keep);dst.appendChild(e);continue}
+  if(RTAGS.has(t)){const e=document.createElement(t);if(/^(SPAN|P|DIV|LI)$/.test(t))cleanStyle(n,e);cleanNode(n,e,keep);dst.appendChild(e)}
+  else cleanNode(n,dst,keep);
  }
 }
-function sanitize(h){const d=new DOMParser().parseFromString('<body>'+(h||''),'text/html'),o=document.createElement('div');cleanNode(d.body,o);return o.innerHTML}
+// keep : garde les annotations (« à compléter », « synonymes ») ; sans keep elles sont retirées (site de lecture, aperçus)
+function sanitize(h,keep){const d=new DOMParser().parseFromString('<body>'+(h||''),'text/html'),o=document.createElement('div');cleanNode(d.body,o,!!keep);return o.innerHTML}
 const rEsc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const plainToHtml=t=>String(t||'').split(/\n{2,}/).filter(p=>p.trim()).map(p=>'<p>'+rEsc(p).replace(/\n/g,'<br>')+'</p>').join('');
 function htmlToText(h){const d=document.createElement('div');d.innerHTML=sanitize(h);d.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));
@@ -79,6 +87,28 @@ function confirmBox(text,yes){return new Promise(res=>{
 .edwrap.is-full .ed{min-height:calc(100vh - 12rem)}
 body.ed-lock{overflow:hidden}
 .edwrap.is-full .stick{top:0}
+.tbar2{margin-top:.35rem}
+.tbar button.anb{width:auto;gap:.4rem;padding:0 .75rem;font-size:.85rem}
+.chpop,.anbar{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;margin:.35rem 0 0;padding:.4rem;border:1px solid var(--line,#dde2dc);border-radius:10px;background:var(--card,#fbfcfa)}
+.chpop button{min-width:2.3rem;height:2.3rem;padding:0 .4rem;border:1px solid var(--line,#dde2dc);border-radius:6px;background:none;color:var(--ink,#3a3f46);font:1.05rem Georgia,serif;cursor:pointer}
+.chpop button:hover{border-color:var(--accent,#7a6a80)}
+.chpop button small{font:.62rem var(--sans,system-ui,sans-serif)}
+.anbar .anty{font-size:.85rem;font-weight:600}
+.anbar .annote{flex:1;min-width:9rem;height:2.3rem;padding:0 .6rem;font:.9rem var(--sans,system-ui,sans-serif)}
+.anbar button,.anbar a{height:2.3rem;display:inline-flex;align-items:center;padding:0 .7rem;border:1px solid var(--line,#dde2dc);border-radius:6px;background:none;color:var(--ink,#3a3f46);font-size:.85rem;text-decoration:none;cursor:pointer}
+.anbar.an-todo{border-color:#e8913f}.anbar.an-syn{border-color:#5d8fc6}
+.ed [data-ann]{border-radius:3px;padding:0 1px;cursor:pointer}
+.ed [data-ann=todo]{background:rgba(240,150,60,.32);border-bottom:2px dashed #e8913f}
+.ed [data-ann=syn]{background:rgba(100,160,230,.28);border-bottom:2px dotted #5d8fc6}
+.anlist{margin:.8rem 0 0;padding:.5rem .7rem;border:1px solid var(--line,#dde2dc);border-radius:10px;background:var(--card,#fbfcfa)}
+.anlist h4{margin:.1rem 0 .4rem;font-size:.85rem;color:var(--soft,#6f7780);font-weight:600}
+.anlist ul{list-style:none;margin:0;padding:0}.anlist li{display:flex;align-items:center;gap:.4rem;margin:.15rem 0}
+.anlist .anit{flex:1;text-align:left;border:0;background:none;color:var(--ink,#3a3f46);font-size:.9rem;padding:.25rem .3rem;cursor:pointer;border-radius:6px}
+.anlist .anit:hover{background:rgba(122,106,128,.14)}
+.anlist .anx{border:0;background:none;color:var(--soft,#6f7780);cursor:pointer;padding:.2rem .5rem}
+.anlist i{display:inline-block;width:.7rem;height:.7rem;border-radius:2px;margin-right:.4rem;vertical-align:-.05rem}
+.anlist i.t{background:rgba(240,150,60,.7)}.anlist i.s{background:rgba(100,160,230,.7)}
+.anlist small{color:var(--soft,#6f7780)}
 .edhead .pchip{margin-right:auto}
 .ed.v-moi,.ed.v-moi *{color:var(--vx-moi,#9a7515)!important}.ed.v-inv,.ed.v-inv *{color:var(--vx-inv,#566f8f)!important}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0 .5rem}
@@ -114,17 +144,26 @@ function initEditor(box,ph,opts){
   hl:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 5.5-5.5 4 4L13 16z"/><path d="M9 12l-3 3v3h4l3-2"/><path d="M4 21h10" stroke="#e8c53a" stroke-width="3"/></svg>',
   ul:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg>',
   ol:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><text x="2.5" y="8" font-size="6.5" fill="currentColor" stroke="none">1</text><text x="2.5" y="14" font-size="6.5" fill="currentColor" stroke="none">2</text><text x="2.5" y="20" font-size="6.5" fill="currentColor" stroke="none">3</text></svg>',
-  clr:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M12 5v8"/><path d="M5 20 19 10"/></svg>'};
+  clr:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M12 5v8"/><path d="M5 20 19 10"/></svg>',
+  todo:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2" stroke="#e8913f"/><circle cx="8" cy="12" r="1.1" fill="#e8913f" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="#e8913f" stroke="none"/><circle cx="16" cy="12" r="1.1" fill="#e8913f" stroke="none"/></svg>',
+  syn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h13l-3-3M20 15H7l3 3" stroke="#5d8fc6"/></svg>'};
  const size=selb('size','Taille du texte',IC.size,opt([['h2','Titre'],['h3','Sous-titre'],['p','Texte normal'],['.85','Petit'],['1.4','Grand'],['1.9','Très grand']]));
  const font=selb('font','Police',IC.font,opt(Object.keys(FONTS).map(k=>[k,k]),v=>'font-family:'+FONTS[v]));
  const color=selb('color','Couleur du texte',IC.color,opt([['#c9a24a','Doré'],['#d58a97','Rose'],['#7fae88','Vert sauge'],['#6c9bd1','Bleu ciel'],['#a08ab0','Violet'],['#e0806a','Corail'],['#8d949e','Gris']],v=>'color:'+v));
+ const NB='\u00A0',NF='\u202F';
+ const CHARS=[['’','Apostrophe typographique'],['…','Points de suspension'],['–','Tiret demi-cadratin'],['œ','œ'],['Œ','Œ'],['æ','æ'],['Æ','Æ'],['À','À'],['É','É'],['È','È'],['Ê','Ê'],['Ç','Ç'],['‹','Guillemet simple ouvrant'],['›','Guillemet simple fermant'],['°','Degré'],[NB,'Espace insécable','<small>ins.</small>'],[NF,'Espace fine insécable','<small>fine</small>']];
+ const chb=(c,label,inner)=>`<button type="button" data-ch="${c}" title="${label}" aria-label="${label}"><span class="gl">${inner}</span></button>`;
+ const anb=(a,label,inner,txt)=>`<button type="button" class="anb" data-an="${a}" aria-pressed="false" title="${label}" aria-label="${label}">${inner}<span>${txt}</span></button>`;
  const tb=(t,label,inner)=>`<button type="button" data-t="${t}" aria-pressed="false" title="${label}" aria-label="${label}">${inner}</button>`;
- const bar=`<div class="tbar" role="toolbar" aria-label="Mise en forme du texte">${size}${font}${color}<i class="sep"></i>${tb('bold','Gras','<b>B</b>')}${tb('italic','Italique','<i>I</i>')}${tb('underline','Souligné','<u>U</u>')}${tb('hl','Surligné',IC.hl)}<i class="sep"></i>${tb('insertUnorderedList','Liste à puces',IC.ul)}${tb('insertOrderedList','Liste numérotée',IC.ol)}<i class="sep"></i><button type="button" data-b="removeFormat" title="Effacer la mise en forme" aria-label="Effacer la mise en forme">${IC.clr}</button></div>`;
+ const bar=`<div class="tbar" role="toolbar" aria-label="Mise en forme du texte">${size}${font}${color}<i class="sep"></i>${tb('bold','Gras','<b>B</b>')}${tb('italic','Italique','<i>I</i>')}${tb('underline','Souligné','<u>U</u>')}${tb('hl','Surligné',IC.hl)}<i class="sep"></i>${tb('insertUnorderedList','Liste à puces',IC.ul)}${tb('insertOrderedList','Liste numérotée',IC.ol)}<i class="sep"></i><button type="button" data-b="removeFormat" title="Effacer la mise en forme" aria-label="Effacer la mise en forme">${IC.clr}</button></div><div class="tbar tbar2" role="toolbar" aria-label="Caractères spéciaux et annotations">${chb('fr','Guillemets français « »','«»')}${chb('en','Guillemets de citation “ ”','“”')}${chb('dash','Tiret cadratin —','—')}${chb('more','Autres caractères','Ω')}${opts.actions?'<i class="sep"></i>'+anb('todo','À compléter (surligne le passage en orange)',IC.todo,'À compléter')+anb('syn','Synonymes à chercher (surligne le passage en bleu)',IC.syn,'Synonymes'):''}</div>`;
  const rib3=opts.actions?`<div class="rib rib3" role="toolbar" aria-label="Interligne et actions"><select data-l="sel" aria-label="Interligne"><option value="">Interligne</option><option value="1.15">Simple</option><option value="1.5">1,5</option><option value="2">Double</option><option value="x" hidden>Personnalisé</option></select><label class="lhr"><input type="range" data-l="rng" min="1" max="3" step="0.1" value="1.7" aria-label="Interligne (curseur)"><output data-l="out">—</output></label><button type="button" id="draft" class="b-d" aria-label="Enregistrer comme brouillon">Enregistrer comme brouillon</button><button type="button" id="pub" class="primary">Publier</button><button type="button" id="del" class="b-x">Supprimer</button></div>`:'';
  box.innerHTML=`<div class="edwrap"><div class="stick">${bar}${rib3}
+ <div class="chpop" hidden role="group" aria-label="Autres caractères">${CHARS.map(([c,t,l])=>`<button type="button" data-c2="${c}" title="${t}" aria-label="${t}">${l||c}</button>`).join('')}</div>
+ <div class="anbar" hidden></div>
  <div class="edhead"><span class="edbtns"><button type="button" class="fsbtn" data-f="full" aria-pressed="false">Plein écran</button></span></div></div>
  <p class="edmsg" role="status"></p>
  <div class="ed" contenteditable="true" role="textbox" aria-multiline="true" data-ph="${ph||''}"></div>
+ <div class="anlist" hidden></div>
  <p class="cnt hint">Sélectionnez un mot ou un passage, puis utilisez les menus et les boutons ci-dessus.</p></div>`;
  const wrap=box.querySelector('.edwrap'),ed=box.querySelector('.ed'),fsb=box.querySelector('[data-f=full]'),cntEl=document.getElementById('cnt');
  if(cntEl)wrap.appendChild(cntEl);
@@ -134,7 +173,8 @@ function initEditor(box,ph,opts){
  const inHl=()=>{const s=getSelection();if(!s||!s.rangeCount)return false;let n=s.anchorNode;n=n&&(n.nodeType===3?n.parentElement:n);
   for(;n&&n!==ed&&ed.contains(n);n=n.parentElement){const b=getComputedStyle(n).backgroundColor;if(b&&b!=='transparent'&&b!=='rgba(0, 0, 0, 0)')return true}return false};
  const refresh=()=>{const s=getSelection();if(!s||!s.rangeCount||!ed.contains(s.anchorNode))return;
-  box.querySelectorAll('[data-t]').forEach(b=>{const t=b.dataset.t;b.setAttribute('aria-pressed',String(t==='hl'?inHl():state(t)))})};
+  box.querySelectorAll('[data-t]').forEach(b=>{const t=b.dataset.t;b.setAttribute('aria-pressed',String(t==='hl'?inHl():state(t)))});
+  box.querySelectorAll('[data-an]').forEach(b=>b.setAttribute('aria-pressed',String(inAnn(b.dataset.an))))};
  document.addEventListener('selectionchange',()=>{const s=getSelection();if(s&&s.rangeCount&&ed.contains(s.anchorNode)){saved=s.getRangeAt(0).cloneRange();refresh()}});
  const fire=()=>ed.dispatchEvent(new Event('input',{bubbles:true}));
  const restore=()=>{ed.focus();if(saved){const s=getSelection();s.removeAllRanges();s.addRange(saved)}};
@@ -142,6 +182,72 @@ function initEditor(box,ph,opts){
  const run=(c,v,css=true)=>{restore();exec(c,v,css);fire();refresh()};
  const collapsed=()=>!saved||saved.collapsed;
  const applySize=em=>{restore();exec('fontSize','7',false);ed.querySelectorAll('font[size="7"]').forEach(f=>{const sp=document.createElement('span');sp.style.fontSize=em+'em';while(f.firstChild)sp.appendChild(f.firstChild);f.replaceWith(sp)});fire()};
+ // ---- caractères spéciaux ----
+ const keepSel=()=>{const sl=getSelection();if(!(sl&&sl.rangeCount&&ed.contains(sl.anchorNode)))restore()};
+ const insertChars=txt=>{keepSel();let done=false;try{done=document.execCommand('insertText',false,txt)}catch{}
+  if(!done){const sl=getSelection();if(!sl.rangeCount)return;const r=sl.getRangeAt(0);if(!ed.contains(r.commonAncestorContainer))return;r.deleteContents();const tn=document.createTextNode(txt);r.insertNode(tn);r.setStartAfter(tn);r.collapse(true);sl.removeAllRanges();sl.addRange(r)}
+  fire()};
+ const wrapPair=(open,close)=>{keepSel();const sl=getSelection();if(!sl.rangeCount)return;const r=sl.getRangeAt(0);if(!ed.contains(r.commonAncestorContainer))return;
+  const nr=document.createRange();
+  if(r.collapsed){const tn=document.createTextNode(open+close);r.insertNode(tn);nr.setStart(tn,open.length);nr.collapse(true)}
+  else{const e=r.cloneRange();e.collapse(false);const st=r.cloneRange();st.collapse(true);const cn=document.createTextNode(close);e.insertNode(cn);st.insertNode(document.createTextNode(open));nr.setStartAfter(cn);nr.collapse(true)}
+  sl.removeAllRanges();sl.addRange(nr);fire()};
+ const pop=box.querySelector('.chpop');
+ box.querySelectorAll('button[data-ch]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>{const c=b.dataset.ch;
+  if(c==='fr')wrapPair('«'+NB,NB+'»');else if(c==='en')wrapPair('“','”');else if(c==='dash')insertChars('—');
+  else{pop.hidden=!pop.hidden}}});
+ pop.querySelectorAll('button').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>{insertChars(b.dataset.c2);pop.hidden=true}});
+
+ // ---- annotations (« à compléter » / « synonymes ») : visibles seulement dans l'éditeur ----
+ const ANL={todo:'À compléter',syn:'Synonymes'};
+ const bar2=box.querySelector('.anbar'),alist=box.querySelector('.anlist');
+ const annEls=id=>[...ed.querySelectorAll('[data-aid]')].filter(x=>x.dataset.aid===id);
+ const unwrap=sp=>{const p=sp.parentNode;if(!p)return;while(sp.firstChild)p.insertBefore(sp.firstChild,sp);p.removeChild(sp);p.normalize()};
+ const newId=()=>'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+ const annOf=n=>{let x=n&&(n.nodeType===3?n.parentElement:n);return x&&x.closest?x.closest('[data-ann]'):null};
+ const inAnn=t=>{const sl=getSelection();if(!sl||!sl.rangeCount||!ed.contains(sl.anchorNode))return false;const a=annOf(sl.anchorNode);return !!a&&a.dataset.ann===t};
+ function wordRange(){const sl=getSelection();if(!sl.rangeCount)return null;const r=sl.getRangeAt(0);let n=r.startContainer,o=r.startOffset;
+  if(n.nodeType!==3||!ed.contains(n))return null;const tx=n.nodeValue,W=/[\p{L}\p{N}'’-]/u;let a=o,b=o;while(a>0&&W.test(tx[a-1]))a--;while(b<tx.length&&W.test(tx[b]))b++;
+  if(a===b)return null;const nr=document.createRange();nr.setStart(n,a);nr.setEnd(n,b);return nr}
+ function textNodesIn(r){const out=[],root=r.commonAncestorContainer.nodeType===3?r.commonAncestorContainer.parentNode:r.commonAncestorContainer;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(!r.intersectsNode(n))continue;
+   let a=n===r.startContainer?r.startOffset:0,b=n===r.endContainer?r.endOffset:n.nodeValue.length;if(b<=a)continue;
+   if(!n.nodeValue.slice(a,b).trim())continue;out.push([n,a,b])}return out}
+ function annotate(type){
+  keepSel();const sl=getSelection();if(!sl.rangeCount)return;let r=sl.getRangeAt(0);if(!ed.contains(r.commonAncestorContainer))return;
+  if(r.collapsed){const wr=wordRange();if(!wr){o_notify('Sélectionnez un mot ou un passage à annoter.');return}r=wr}
+  const hit=new Set();textNodesIn(r).forEach(([n])=>{const a=annOf(n);if(a)hit.add(a.dataset.aid||'')});
+  if(!hit.size&&r.startContainer.nodeType===3){const a=annOf(r.startContainer);if(a)hit.add(a.dataset.aid||'')}
+  if(hit.size){const first=[...hit][0],ty=(annEls(first)[0]||{dataset:{}}).dataset.ann;
+   hit.forEach(id=>{if(ty===type)annEls(id).forEach(unwrap);else annEls(id).forEach(x=>x.setAttribute('data-ann',type))});
+   bar2.hidden=true}
+  else{const id=newId();textNodesIn(r).reverse().forEach(([n,a,b])=>{let mid=n;if(b<n.nodeValue.length)n.splitText(b);if(a>0)mid=n.splitText(a);
+    const sp=document.createElement('span');sp.setAttribute('data-ann',type);sp.setAttribute('data-aid',id);mid.parentNode.insertBefore(sp,mid);sp.appendChild(mid)});
+   const f=annEls(id)[0];if(f)showBar(id)}
+  fire();renderAnn();refresh()}
+ const o_notify=t=>{const m=box.querySelector('.edmsg');m.textContent=t;m.style.display='block';clearTimeout(o_notify.t);o_notify.t=setTimeout(()=>{m.textContent='';m.style.display=''},4000)};
+ function showBar(id){const els=annEls(id);if(!els.length){bar2.hidden=true;return}
+  const ty=els[0].dataset.ann,word=els.map(x=>x.textContent).join(' ').trim().split(/\s+/).slice(0,3).join(' '),note=els[0].dataset.note||'';
+  bar2.className='anbar an-'+ty;bar2.hidden=false;bar2.dataset.id=id;
+  bar2.innerHTML='<span class="anty">'+ANL[ty]+'</span><input class="annote" type="text" maxlength="300" placeholder="'+(ty==='syn'?'Mots envisagés…':'Ce qu’il faut compléter…')+'" aria-label="Note"><span style="flex:1"></span>'
+   +(ty==='syn'?'<a href="https://www.cnrtl.fr/synonymie/'+encodeURIComponent(word.replace(/[^\p{L}\p{N}\s'’-]/gu,''))+'" target="_blank" rel="noopener" title="Ouvre le dictionnaire des synonymes en ligne (seul ce mot est envoyé)">Dictionnaire</a>':'')
+   +'<button type="button" data-x="del">Retirer</button><button type="button" data-x="close">Fermer</button>';
+  bar2.querySelector('.annote').value=note}
+ bar2.addEventListener('input',e=>{if(!e.target.classList.contains('annote'))return;const v=e.target.value.slice(0,300);annEls(bar2.dataset.id).forEach(x=>{v?x.setAttribute('data-note',v):x.removeAttribute('data-note')});renderAnn()});
+ bar2.addEventListener('click',e=>{const b=e.target.closest('button[data-x]');if(!b)return;
+  if(b.dataset.x==='del'){annEls(bar2.dataset.id).forEach(unwrap);fire();renderAnn()}bar2.hidden=true});
+ ed.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-ann]');if(a&&a.dataset.aid)showBar(a.dataset.aid)});
+ function renderAnn(){const g=new Map();ed.querySelectorAll('[data-ann]').forEach(sp=>{const id=sp.dataset.aid||'';const x=g.get(id)||{id,ty:sp.dataset.ann,t:'',n:sp.dataset.note||''};x.t+=(x.t?' ':'')+sp.textContent;g.set(id,x)});
+  const L=[...g.values()];if(!L.length){alist.hidden=true;alist.innerHTML='';return}
+  alist.hidden=false;
+  alist.innerHTML='<h4>Annotations ('+L.length+')</h4><ul>'+L.map(x=>'<li><button type="button" class="anit" data-g="'+x.id+'"><i class="'+(x.ty==='todo'?'t':'s')+'"></i>'+ANL[x.ty]+' · « '+rEsc(x.t.length>40?x.t.slice(0,40)+'…':x.t)+' »'+(x.n?' <small>— '+rEsc(x.n.length>50?x.n.slice(0,50)+'…':x.n)+'</small>':'')+'</button><button type="button" class="anx" data-d="'+x.id+'" aria-label="Retirer l’annotation" title="Retirer">✕</button></li>').join('')+'</ul>'}
+ alist.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.d){annEls(b.dataset.d).forEach(unwrap);fire();renderAnn();if(bar2.dataset.id===b.dataset.d)bar2.hidden=true;return}
+  if(b.dataset.g){const els=annEls(b.dataset.g);if(!els.length)return;els[0].scrollIntoView({block:'center'});showBar(b.dataset.g);
+   const r=document.createRange();r.selectNodeContents(els[0]);const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}});
+ box.querySelectorAll('button[data-an]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>annotate(b.dataset.an)});
+ ed.addEventListener('input',()=>{clearTimeout(renderAnn.t);renderAnn.t=setTimeout(renderAnn,300)});
+ ed.addEventListener('ed-rebase',()=>{bar2.hidden=true;renderAnn()});
  box.querySelectorAll('button[data-b]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>run(b.dataset.b)});
  box.querySelectorAll('button[data-t]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>{const t=b.dataset.t;
   if(t==='hl'){const on=inHl();restore();if(!exec('hiliteColor',on?'transparent':HL))exec('backColor',on?'transparent':HL);fire();refresh()}else run(t)}});
@@ -185,6 +291,6 @@ function initEditor(box,ph,opts){
  const userLH=n=>{setLH(n);try{localStorage.setItem('lh',n==null?'':String(n))}catch{}};
  if(lsel){lsel.onchange=()=>{if(lsel.value==='x'){lsel.value=lh?'x':'';return}userLH(lsel.value===''?null:+lsel.value)};lrng.oninput=()=>userLH(+lrng.value)}
  setLH(remembered());
- return{getLH:()=>lh,setLH,resetLH:()=>setLH(remembered()),el:ed,html:()=>sanitize(ed.innerHTML),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h);ed.dispatchEvent(new Event('ed-rebase'))},clear:()=>{ed.innerHTML='';ed.dispatchEvent(new Event('ed-rebase'))},onInput:f=>ed.addEventListener('input',f),
+ return{getLH:()=>lh,setLH,resetLH:()=>setLH(remembered()),el:ed,html:()=>sanitize(ed.innerHTML,true),text:()=>htmlToText(ed.innerHTML),set:h=>{ed.innerHTML=sanitize(h,true);ed.dispatchEvent(new Event('ed-rebase'))},clear:()=>{ed.innerHTML='';ed.dispatchEvent(new Event('ed-rebase'))},onInput:f=>ed.addEventListener('input',f),
   isFull,exitFull:exit,setVoice:v=>{ed.classList.remove('v-moi','v-inv');if(v)ed.classList.add(v==='moi'?'v-moi':'v-inv');const cs=box.querySelector('[data-c=color]');if(cs)(cs.closest('.tsel')||cs).hidden=!!v},notify:t=>{box.querySelector('.edmsg').textContent=t}};
 }

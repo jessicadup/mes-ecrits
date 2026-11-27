@@ -4,7 +4,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const fr=n=>n.toLocaleString('fr-FR');
 const msg=t=>{$('#msg').textContent=t;clearTimeout(window._mt);if(t)window._mt=setTimeout(()=>{$('#msg').textContent=''},9000);try{if(ED&&ED.isFull())ED.notify(t)}catch{}};
 const today=()=>new Date().toISOString().slice(0,10);
-const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
+const cnt=t=>({c:t.length,w:wordsOf(t)});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let PW=null,TOK='',editId=null,all=[];
 const ED=initEditor($('#edbox'),'Écrivez ici…',{actions:true});
@@ -92,7 +92,7 @@ async function send(draft){
  if(!title)return msg('Il manque le titre.');
  const was=all.find(x=>x.id===id&&x.by==='invite');
  if(draft&&was&&!was.draft&&!await confirmBox('Ce texte est en ligne. Le retirer du site et le garder en brouillon ?','Retirer du site'))return;
- if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » ?`))return;
+ if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » ?`+annWarn(html)))return;
  try{msg('Enregistrement en cours…');
   const{list,sha}=await load(),e={id,date,title,body:text,html,n:cnt(text),by:'invite'};if(draft)e.draft=true;if(cg)e.cat=cg;{const lhv=ED.getLH();if(lhv)e.lh=lhv}
   const i=list.findIndex(x=>x.id===id&&x.by==='invite');{const wl=statLog(i>=0?list[i]:null,text);if(wl)e.wl=wl}placeText(list,e);i>=0?list[i]=e:list.push(e);

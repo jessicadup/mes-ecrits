@@ -4,7 +4,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const fr=n=>n.toLocaleString('fr-FR');
 const msg=t=>{$('#msg').textContent=t;clearTimeout(window._mt);if(t)window._mt=setTimeout(()=>{$('#msg').textContent=''},9000);try{if(ED&&ED.isFull())ED.notify(t)}catch{}};
 const today=()=>new Date().toISOString().slice(0,10);
-const cnt=t=>({c:t.length,w:(t.trim().match(/\S+/g)||[]).length});
+const cnt=t=>({c:t.length,w:wordsOf(t)});
 const bad=e=>e.name==='OperationError'?'Mot de passe incorrect.':e.message;
 let editId=null,cur=[],lcur=[],PW=null,TOK='',LP=null;
 const ED=initEditor($('#edbox'),'Écrivez ici…',{actions:true});
@@ -85,7 +85,7 @@ async function send(draft){
  if(!title)return msg('Il manque le titre.');
  const was=(cat==='grivois'?lcur:cur).find(x=>x.id===id);
  if(draft&&was&&!was.draft&&!await confirmBox('Ce texte est en ligne. Le retirer du site et le garder en brouillon ?','Retirer du site'))return;
- if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » (${CATN[cat]}${cg?' › '+((cat==='grivois'?catsOf(lcur,'grivois'):catsOf(cur,'main')).find(c=>c.id===cg)||{name:''}).name:''}) ?`))return;
+ if(!draft&&!await confirmBox(`Mettre en ligne « ${title} » (${CATN[cat]}${cg?' › '+((cat==='grivois'?catsOf(lcur,'grivois'):catsOf(cur,'main')).find(c=>c.id===cg)||{name:''}).name:''}) ?`+annWarn(html)))return;
  try{
   const base={id,date,title,body:text,html,n:cnt(text)};if(draft)base.draft=true;{const lhv=ED.getLH();if(lhv)base.lh=lhv}
   if(cat==='grivois'){

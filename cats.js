@@ -52,6 +52,11 @@ const seenSet=()=>{try{return new Set(JSON.parse(localStorage.getItem('seen')||'
 function markSeen(t){try{const s=seenSet();s.add(seenKey(t));localStorage.setItem('seen',JSON.stringify([...s].slice(-3000)))}catch{}}
 const lastDate=t=>isDuo(t)?(t.parts.map(p=>p.date||'').sort().pop()||t.date||''):(t.date||'');
 function isNew(t,S){if(isCat(t)||t.draft)return false;const ms=Date.parse(lastDate(t)+'T12:00:00');return !isNaN(ms)&&Date.now()-ms<=7*864e5&&!(S||seenSet()).has(seenKey(t))}
+// Annotations d'un texte (« à compléter », « synonymes ») : nombre de passages annotés
+function annCount(t){const r={todo:0,syn:0},seen=new Set();const re=/<span\b[^>]*data-ann="(todo|syn)"[^>]*>/g;let m;
+ while(m=re.exec((t&&t.html)||'')){const id=(m[0].match(/data-aid="([^"]*)"/)||[])[1]||m.index;const k=m[1]+id;if(!seen.has(k)){seen.add(k);r[m[1]]++}}return r}
+const annWarn=h=>{const n=annCount({html:h}).todo;return n?' Il reste '+n+' passage'+(n>1?'s':'')+' « à compléter ».':''};
+function annBadges(t){const c=annCount(t);return(c.todo?`<span class="ca-an an-todo">✎ ${c.todo} à compléter</span>`:'')+(c.syn?`<span class="ca-an an-syn">⇄ ${c.syn} synonyme${c.syn>1?'s':''}</span>`:'')}
 const nmH=s=>s===TIROIR?'Le tiroir <i>pas rangé</i>':String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let CAOPEN=null; // clé de la rubrique ouverte : « portée:identifiant » (ou « portée:none » pour le tiroir pas rangé)
 const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
@@ -80,6 +85,10 @@ const openAt=(scope,id)=>{CAOPEN=scope+':'+(id||'none')};
 .ca .item.row b.tt[data-a]:hover:after{opacity:.6}
 @media(hover:none){.ca .item.row b.tt[data-a]:after{opacity:.4}}
 .tt-in{display:block;width:100%;box-sizing:border-box;margin:0;padding:.2rem .5rem;font:inherit;font-weight:500}
+.ca-an{display:inline-block;margin:.2rem .4rem 0 0;padding:0 .5rem;border-radius:9px;font-size:.78rem}
+.ca-an.an-todo{border:1px solid #e8913f;color:#c9741f;background:rgba(240,150,60,.14)}
+.ca-an.an-syn{border:1px solid #5d8fc6;color:#4a7bb0;background:rgba(100,160,230,.14)}
+@media(prefers-color-scheme:dark){.ca-an.an-todo{color:#f0a860}.ca-an.an-syn{color:#8fb6e3}}
 .ca-d{font-size:.8rem;color:var(--accent,#7a6a80);border:1px solid var(--accent,#7a6a80);border-radius:9px;padding:0 .5rem;white-space:nowrap}
 .ca-sum{margin:0 0 .8rem;padding:.55rem .9rem;border-left:4px solid var(--accent,#7a6a80);background:rgba(122,106,128,.14);border-radius:0 6px 6px 0;font-size:.92rem}
 .ca-st{margin:.9rem 0 .2rem;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--soft,#6f7780)}
@@ -106,7 +115,7 @@ document.addEventListener('click',e=>{const h=e.target.closest('.cons .ca-h');if
 // o:{texts,cats,meta,scope,restTitle,readonly}
 function treeHtml(o){
  const{g,rest}=groupTexts(o.texts,o.cats),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),sc=o.scope||'x',ro=!!o.readonly;
- const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b class="tt"${ro?'':` data-a="tedit" data-id="${t.id}" title="Cliquer pour modifier le titre"`}>${E(t.title)}</b><span>${o.meta(t)}</span></div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
+ const row=(t,mv,first,last)=>`<div class="item row${t.draft?' is-draft':''}"><div><b class="tt"${ro?'':` data-a="tedit" data-id="${t.id}" title="Cliquer pour modifier le titre"`}>${E(t.title)}</b><span>${o.meta(t)}</span>${ro?'':annBadges(t)}</div>${ro?'':`<div class="bb">${mv?`<button class="ghost" data-a="tup" data-id="${t.id}"${first?' disabled':''} title="Monter">↑</button><button class="ghost" data-a="tdown" data-id="${t.id}"${last?' disabled':''} title="Descendre">↓</button>`:''}<button class="ghost" data-a="edit" data-id="${t.id}">Modifier</button><button class="ghost" data-a="trub" data-id="${t.id}">Rubrique</button><button class="ghost" data-a="del" data-id="${t.id}">Supprimer</button></div>`}</div>`;
  const acc=(key,name,n,tools,inner,dn)=>{const op=CAOPEN===key;
   return `<div class="ca" data-k="${E(key)}"><button type="button" class="ca-h" aria-expanded="${op}"><span class="ca-a" aria-hidden="true"></span><span class="ca-n">${nmH(name)}</span><span class="ca-c">${n} texte${n>1?'s':''}</span>${dn?`<span class="ca-d">✎ ${dn} brouillon${dn>1?'s':''}</span>`:''}</button><div class="ca-b${op?' open':''}"><div class="ca-i">${tools}${inner||'<p class="empty">Aucun texte dans cette rubrique.</p>'}</div></div></div>`};
  // brouillons d'abord (section à part), puis textes publiés ; les flèches ne concernent que les publiés
@@ -159,7 +168,7 @@ const DUO_ID='rub-quatre-mains';
 const isDuo=x=>!!x&&!isCat(x)&&x.duo===true;
 function duoCat(list){let c=list.find(x=>x.id===DUO_ID&&isCat(x));
  if(!c){c={id:DUO_ID,kind:'cat',section:'grivois',name:'À quatre mains',order:0,by:'duo'};list.push(c)}return c}
-function duoCalc(t){t.body=t.parts.map(p=>p.body).join('\n\n');t.n={c:t.body.length,w:(t.body.trim().match(/\S+/g)||[]).length}}
+function duoCalc(t){t.body=t.parts.map(p=>p.body).join('\n\n');t.n={c:t.body.length,w:wordsOf(t.body)}}
 const vxc=b=>b==='moi'?'moi':'inv';
 const vxlh=p=>{const v=+p.lh;return v>=1&&v<=3?` style="line-height:${v}"`:''};
 // lecture : passages dans leurs deux couleurs
@@ -191,7 +200,7 @@ function editTitleInline(b,save){if(b.querySelector('input'))return;
  inp.onclick=e=>e.stopPropagation()}
 
 // --- Statistiques : journal des mots ajoutés à chaque enregistrement (champ wl : {date: mots}) ---
-const wordsOf=s=>(String(s||'').trim().match(/\S+/g)||[]).length;
+const wordsOf=s=>(String(s||'').match(/\S+/g)||[]).filter(w=>/[\p{L}\p{N}]/u.test(w)).length;
 function localDay(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
 // prev : version précédente du texte (ou du passage) ; body : texte enregistré. Renvoie le journal mis à jour.
 function statLog(prev,body){const wl={...((prev&&prev.wl)||{})},add=Math.max(0,wordsOf(body)-(prev?wordsOf(prev.body):0));
